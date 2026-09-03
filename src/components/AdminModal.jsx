@@ -17,6 +17,7 @@ export default function AdminModal({
 }) {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminAuthPassword, setAdminAuthPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [easterEggDialog, setEasterEggDialog] = useState(false);
 
@@ -37,6 +38,7 @@ export default function AdminModal({
     e.preventDefault();
     if (password === '17218') {
       setIsAuthenticated(true);
+      setAdminAuthPassword('17218');
       setPasswordError('');
     } else if (password === '19881102') {
       setEasterEggDialog(true);
@@ -45,6 +47,8 @@ export default function AdminModal({
       setPasswordError('密碼錯誤！請重新輸入喔！');
     }
   };
+
+  const activeAuthPassword = adminAuthPassword || '17218';
 
   const handleSetShortcut = (shortcutType) => {
     let dateStr = '';
@@ -56,10 +60,10 @@ export default function AdminModal({
 
     if (dateStr) {
       if (pickerMode === 'cutoff') {
-        onSetCutoff(dateStr, password);
+        onSetCutoff(dateStr, activeAuthPassword);
         setToast({ isOpen: true, title: '時間已更新', message: '下注截止時間已成功調整！', type: 'success' });
       } else if (pickerMode === 'reveal') {
-        onSetRevealDate(dateStr, password);
+        onSetRevealDate(dateStr, activeAuthPassword);
         setToast({ isOpen: true, title: '時間已更新', message: '性別揭曉時間已成功調整！', type: 'success' });
       }
       setPickerMode(null);
@@ -71,10 +75,10 @@ export default function AdminModal({
     const formatted = new Date(tempDate).toISOString();
 
     if (pickerMode === 'cutoff') {
-      onSetCutoff(formatted, password);
+      onSetCutoff(formatted, activeAuthPassword);
       setToast({ isOpen: true, title: '時間已更新', message: '自訂截止時間已成功更新！', type: 'success' });
     } else if (pickerMode === 'reveal') {
-      onSetRevealDate(formatted, password);
+      onSetRevealDate(formatted, activeAuthPassword);
       setToast({ isOpen: true, title: '時間已更新', message: '自訂揭曉時間已成功更新！', type: 'success' });
     }
     setPickerMode(null);
@@ -93,7 +97,7 @@ export default function AdminModal({
       message: `確定要刪除「${bet.name}」這筆 $${Number(bet.amount).toLocaleString('en-US')} 的下注嗎？`,
       type: 'confirm',
       onConfirm: () => {
-        onDeleteBet(bet.id, password);
+        onDeleteBet(bet.id, activeAuthPassword);
       }
     });
   };
@@ -105,7 +109,10 @@ export default function AdminModal({
       message: `確定要設定最終勝出者為【${teamName}】嗎？設定後將鎖定投注並展現勝出恭喜畫面！`,
       type: 'confirm',
       onConfirm: () => {
-        onSetReveal(teamResult, password);
+        // 1. 發送揭曉指令給伺服器
+        onSetReveal(teamResult, activeAuthPassword);
+        // 2. 關閉 Admin 控制台，讓全螢幕揭曉煙火盛大展現！
+        onClose();
       }
     });
   };
@@ -113,7 +120,7 @@ export default function AdminModal({
   const handleExecuteResetAll = () => {
     if (resetConfirmInput.trim() !== '重置') return;
 
-    onResetAll(password);
+    onResetAll(activeAuthPassword);
     setIsResetModalOpen(false);
     setResetConfirmInput('');
     setToast({
@@ -311,7 +318,7 @@ export default function AdminModal({
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {/* 付款切換 */}
                           <button
-                            onClick={() => onTogglePayment(bet.id, !bet.isPaid, password)}
+                            onClick={() => onTogglePayment(bet.id, !bet.isPaid, activeAuthPassword)}
                             className={`px-2.5 py-1 rounded-xl text-[10px] font-black transition-all border ${
                               bet.isPaid
                                 ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -411,7 +418,7 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗 (支援點擊『重置』自動複製並帶入)」 */}
+      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗」 */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-rose-100 relative box-border">
@@ -481,7 +488,7 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 超嗆超幽默彩蛋彈窗 (修正: 跪求元寶媽真實密碼) */}
+      {/* 超嗆超幽默彩蛋彈窗 */}
       {easterEggDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-rose-300 text-center">
