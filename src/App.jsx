@@ -8,7 +8,7 @@ import AdminModal from './components/AdminModal';
 import RevealModal from './components/RevealModal';
 import ToastModal from './components/ToastModal';
 import { useGenderBetStore } from './lib/store';
-import { Bell, Sparkles } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 export default function App() {
   const store = useGenderBetStore();
@@ -22,8 +22,14 @@ export default function App() {
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
 
-  // 監聽權限狀態
+  // 1. 自動註冊 Service Worker (Android Chrome 相容必備)
   useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.log('Service Worker registration failed:', err);
+      });
+    }
+
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
@@ -33,10 +39,42 @@ export default function App() {
     if ('Notification' in window) {
       const perm = await Notification.requestPermission();
       setNotificationPermission(perm);
+      if (perm === 'granted') {
+        sendNativeNotification('🔔 推播通知已開啟！', {
+          body: '性別大揭曉時，您的手機將第一時間收到即時通知！',
+          icon: '/favicon.ico',
+          tag: 'welcome-notification'
+        });
+      }
     }
   };
 
-  // 🌟 核心：監聽揭曉瞬間！一旦管理者在後台揭曉，全場手機零延遲自動跳出彈窗＋系統層推播通知
+  // 兼容 Android Chrome 與桌面端的原生推播函式
+  const sendNativeNotification = (title, options) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          registration.showNotification(title, options);
+        })
+        .catch(() => {
+          try {
+            new Notification(title, options);
+          } catch (e) {
+            console.error('Notification fallback failed', e);
+          }
+        });
+    } else {
+      try {
+        new Notification(title, options);
+      } catch (e) {
+        console.error('Notification fallback failed', e);
+      }
+    }
+  };
+
+  // 🌟 核心：監聽揭曉瞬間！一旦管理者在後台揭曉，全場手機零延遲自動跳出彈窗＋系統層推播通知＋震動
   useEffect(() => {
     const prevResult = prevRevealedResultRef.current;
     const currentResult = store.config.revealedResult;
@@ -45,19 +83,23 @@ export default function App() {
       // 1. 自動跳出全螢幕爆竹煙火 Modal
       setIsRevealModalClosed(false);
 
-      // 2. 觸發手機/電腦系統層原生推播通知 (若已授權)
-      if ('Notification' in window && Notification.permission === 'granted') {
+      // 2. 觸發手機震動歡慶感應
+      if ('vibrate' in navigator) {
         try {
-          const isPrince = currentResult === 'prince';
-          new Notification('🎉 小元寶性別大揭曉！', {
-            body: `驚喜揭曉：小元寶是【${isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝'}】！恭喜猜中的得獎好朋友！`,
-            icon: '/favicon.ico',
-            tag: 'gender-reveal'
-          });
+          navigator.vibrate([200, 100, 200, 100, 300]);
         } catch (e) {
-          console.error('Notification error:', e);
+          // safe fallback
         }
       }
+
+      // 3. 觸發 Android Chrome 兼容之系統層原生推播通知
+      const isPrince = currentResult === 'prince';
+      sendNativeNotification('🎉 小元寶性別大揭曉！', {
+        body: `驚喜揭曉：小元寶是【${isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝'}】！恭喜猜中的得獎好朋友！`,
+        icon: '/favicon.ico',
+        tag: 'gender-reveal-result',
+        vibrate: [200, 100, 200]
+      });
     }
 
     prevRevealedResultRef.current = currentResult;
@@ -87,7 +129,7 @@ export default function App() {
           onOpenAdmin={() => setIsAdminModalOpen(true)}
         />
 
-        {/* 🔔 揭曉即時推播權限開啟卡片 (當權限尚未同意時顯示) */}
+        {/* 🔔 揭曉即時推播權限開啟卡片 */}
         {notificationPermission === 'default' && 'Notification' in window && (
           <div className="w-full p-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white rounded-2xl shadow-lg border border-purple-300 flex items-center justify-between gap-2 box-border animate-fadeIn">
             <div className="flex items-center gap-2 min-w-0">
@@ -176,7 +218,7 @@ export default function App() {
         onResetAll={store.adminResetAll}
       />
 
-      {/* 揭曉結果彈窗 (揭曉時全螢幕跳出爆竹煙火) */}
+      {/* 揭曉結果彈窗 */}
       {store.config.revealedResult && !isRevealModalClosed && (
         <RevealModal
           revealedResult={store.config.revealedResult}
