@@ -8,7 +8,7 @@ import AdminModal from './components/AdminModal';
 import RevealModal from './components/RevealModal';
 import ToastModal from './components/ToastModal';
 import { useGenderBetStore } from './lib/store';
-import { Bell, Sparkles, PartyPopper } from 'lucide-react';
+import { Bell, Sparkles, PartyPopper, Copy, CreditCard, Check } from 'lucide-react';
 
 export default function App() {
   const store = useGenderBetStore();
@@ -17,11 +17,12 @@ export default function App() {
   const [isRevealModalClosed, setIsRevealModalClosed] = useState(false);
   const [testRevealMode, setTestRevealMode] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState('default');
+  const [copiedBank, setCopiedBank] = useState(false);
 
   // 手機端專屬：頂部強效懸浮廣播 Push Banner
   const [pushBanner, setPushBanner] = useState({ isOpen: false, title: '', message: '' });
 
-  // 下注成功專屬導引 Toast
+  // 下注成功專屬導引 Toast (含收款帳號資訊)
   const [successToast, setSuccessToast] = useState({ isOpen: false, teamName: '', amount: 0 });
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
@@ -38,6 +39,18 @@ export default function App() {
       setNotificationPermission(Notification.permission);
     }
   }, []);
+
+  const handleCopyBankAccount = () => {
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText('1241979037836');
+        setCopiedBank(true);
+        setTimeout(() => setCopiedBank(false), 2000);
+      }
+    } catch {
+      // safe fallback
+    }
+  };
 
   const handleRequestNotificationPermission = async () => {
     if ('Notification' in window) {
@@ -258,6 +271,8 @@ export default function App() {
           grandTotal={store.grandTotal}
           revealedResult={store.config.revealedResult}
           onCancelBet={store.cancelBet}
+          onCopyBankAccount={handleCopyBankAccount}
+          copiedBank={copiedBank}
         />
 
         {/* 頁尾版權小字 */}
@@ -320,15 +335,67 @@ export default function App() {
         />
       )}
 
-      {/* 下注成功專屬提示 ToastModal */}
-      <ToastModal
-        isOpen={successToast.isOpen}
-        type="success"
-        title="🎉 下注成功！"
-        message={`太棒了！您已成功預測【${successToast.teamName}】$${Number(successToast.amount).toLocaleString('en-US')}！\n\n👩🏻‍🍼 請記得洽【元寶媽】確認付款完成喔！`}
-        confirmText="好的，去找元寶媽 💖"
-        onClose={() => setSuccessToast(prev => ({ ...prev, isOpen: false }))}
-      />
+      {/* 下注成功專屬提示 ToastModal (含收款銀行與帳號 ＋ 複製按鈕) */}
+      {successToast.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-xs w-full p-5 text-center shadow-2xl border-2 border-emerald-200 relative animate-scaleUp">
+            
+            <button
+              onClick={() => setSuccessToast(prev => ({ ...prev, isOpen: false }))}
+              className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
+            >
+              ✕
+            </button>
+
+            <div className="mb-3 flex justify-center">
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-inner">
+                <PartyPopper className="w-8 h-8 text-emerald-600 animate-bounce" />
+              </div>
+            </div>
+
+            <h3 className="text-base font-black text-slate-800 mb-1">
+              🎉 下注成功！
+            </h3>
+
+            <p className="text-xs text-slate-600 font-semibold leading-relaxed mb-3">
+              太棒了！您已成功預測【{successToast.teamName}】${Number(successToast.amount).toLocaleString('en-US')}！
+            </p>
+
+            {/* 收款帳號資訊卡片 */}
+            <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200 mb-4 text-left box-border">
+              <div className="flex items-center gap-1.5 text-xs font-black text-emerald-950 mb-1">
+                <CreditCard className="w-4 h-4 text-emerald-600" />
+                <span>元寶媽付款轉帳帳號:</span>
+              </div>
+              <div className="text-xs font-bold text-slate-700 pl-0.5">
+                銀行：<span className="font-black text-emerald-900">玉山銀行 (808)</span>
+              </div>
+              <div className="text-xs font-bold text-slate-700 pl-0.5 mt-0.5 flex items-center justify-between">
+                <span>帳號：<span className="font-black text-emerald-950 tracking-wider text-sm">1241979037836</span></span>
+                <button
+                  onClick={handleCopyBankAccount}
+                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-lg transition-all flex items-center gap-0.5 shadow-xs active:scale-95"
+                >
+                  {copiedBank ? <Check className="w-3 h-3 text-white" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedBank ? '已複製' : '複製帳號'}</span>
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-pink-600 font-extrabold mb-4">
+              👩🏻‍🍼 請記得完成匯款後洽【元寶媽】確認喔！
+            </p>
+
+            <button
+              onClick={() => setSuccessToast(prev => ({ ...prev, isOpen: false }))}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95"
+            >
+              好的，我知道了 💖
+            </button>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

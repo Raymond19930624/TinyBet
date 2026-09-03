@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Clock, Trash2, Heart, Trophy, Sparkles, Crown, Megaphone } from 'lucide-react';
+import { CheckCircle2, Clock, Trash2, Heart, Trophy, Sparkles, Crown, Megaphone, CreditCard, Copy, Check } from 'lucide-react';
 import ToastModal from './ToastModal';
 
 export default function BetSplitList({
@@ -10,7 +10,9 @@ export default function BetSplitList({
   princessTotal,
   grandTotal,
   revealedResult,
-  onCancelBet
+  onCancelBet,
+  onCopyBankAccount,
+  copiedBank
 }) {
   const [activeTab, setActiveTab] = useState('prince');
   
@@ -117,7 +119,7 @@ export default function BetSplitList({
                 <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 已付款 ✅
               </span>
             ) : (
-              <span className="inline-flex items-center gap-0.5 text-amber-700 font-bold">
+              <span className="inline-flex items-center gap-1 text-amber-700 font-bold">
                 <Clock className="w-3 h-3 text-amber-600 animate-pulse" /> 未付款 ⏳
               </span>
             )}
@@ -168,6 +170,28 @@ export default function BetSplitList({
             )}
           </div>
 
+          {/* 💳 轉帳帳號資訊便籤列 (一鍵複製) */}
+          <div className="mb-3 p-2.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between gap-2 box-border">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-1.5 bg-emerald-600 text-white rounded-xl flex-shrink-0">
+                <CreditCard className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-extrabold text-emerald-900">
+                  玉山銀行 (808) <span className="font-black text-emerald-950 tracking-wider text-xs ml-0.5">1241979037836</span>
+                </div>
+                <div className="text-[9px] text-emerald-700 font-bold truncate">下注後轉帳並洽元寶媽確認</div>
+              </div>
+            </div>
+            <button
+              onClick={onCopyBankAccount}
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-xl transition-all flex items-center gap-0.5 flex-shrink-0 shadow-xs active:scale-95 border border-emerald-500"
+            >
+              {copiedBank ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              <span>{copiedBank ? '已複製' : '複製帳號'}</span>
+            </button>
+          </div>
+
           {/* 雙 Tab 切換按鈕 */}
           <div className="grid grid-cols-2 gap-2 mb-3 w-full">
             {/* 王子隊 Tab */}
@@ -209,7 +233,7 @@ export default function BetSplitList({
             </button>
           </div>
 
-          {/* 名單內容卡片 (無資料時採用緊湊精緻 py-4 卡片，消除過大留白) */}
+          {/* 名單內容卡片 */}
           <div className="w-full">
             {/* 王子隊名單 */}
             {activeTab === 'prince' && (
