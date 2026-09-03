@@ -8,7 +8,7 @@ import AdminModal from './components/AdminModal';
 import RevealModal from './components/RevealModal';
 import ToastModal from './components/ToastModal';
 import { useGenderBetStore } from './lib/store';
-import { Bell, Sparkles, PartyPopper, Smartphone } from 'lucide-react';
+import { Bell, Sparkles, PartyPopper } from 'lucide-react';
 
 export default function App() {
   const store = useGenderBetStore();
@@ -18,10 +18,6 @@ export default function App() {
   const [testRevealMode, setTestRevealMode] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState('default');
 
-  // PWA 安裝 Event
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isPwaInstalled, setIsPwaInstalled] = useState(false);
-
   // 手機端專屬：頂部強效懸浮廣播 Push Banner
   const [pushBanner, setPushBanner] = useState({ isOpen: false, title: '', message: '' });
 
@@ -30,7 +26,7 @@ export default function App() {
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
 
-  // 1. 自動註冊 Service Worker & 捕捉 PWA 安裝事件
+  // 自動註冊 Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -41,35 +37,7 @@ export default function App() {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
-
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsPwaInstalled(true);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
   }, []);
-
-  const handleInstallPwa = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setIsPwaInstalled(true);
-      }
-      setDeferredPrompt(null);
-    } else {
-      alert('請點擊瀏覽器選單 (三點/分享) ➔ 選擇「加到主畫面」即可安裝成手機 App 享有全背景推播！');
-    }
-  };
 
   const handleRequestNotificationPermission = async () => {
     if ('Notification' in window) {
@@ -209,7 +177,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 pb-6 box-border relative">
       
-      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner */}
+      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner (揭曉瞬間 100% 彈出) */}
       {pushBanner.isOpen && (
         <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-3.5 bg-gradient-to-r from-purple-700 via-indigo-700 to-pink-700 text-white rounded-3xl shadow-2xl border-2 border-yellow-300 animate-slideDown flex items-start gap-3 box-border">
           <div className="p-2 bg-yellow-400 text-purple-950 rounded-2xl flex-shrink-0 animate-bounce">
@@ -241,25 +209,6 @@ export default function App() {
           isConnected={store.isConnected}
           onOpenAdmin={() => setIsAdminModalOpen(true)}
         />
-
-        {/* 📱 PWA 一鍵加到主畫面 / 安裝手機 App 導引卡片 (解鎖背景離線推播) */}
-        {!isPwaInstalled && (
-          <div className="w-full p-3 bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 text-white rounded-2xl shadow-lg border border-purple-300 flex items-center justify-between gap-2 box-border animate-fadeIn">
-            <div className="flex items-center gap-2 min-w-0">
-              <Smartphone className="w-4 h-4 text-yellow-300 animate-bounce flex-shrink-0" />
-              <div>
-                <div className="text-xs font-black text-yellow-300">加到主畫面 / 安裝手機 App 📱</div>
-                <div className="text-[10px] text-white/90 font-bold truncate">網頁關閉/背景休眠也能 100% 收到揭曉通知！</div>
-              </div>
-            </div>
-            <button
-              onClick={handleInstallPwa}
-              className="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-purple-950 font-black text-xs rounded-xl shadow-md transition-all flex-shrink-0 active:scale-95 border border-white/80"
-            >
-              一鍵加到主畫面
-            </button>
-          </div>
-        )}
 
         {/* 🔔 揭曉即時推播權限開啟卡片 */}
         {notificationPermission === 'default' && 'Notification' in window && (
