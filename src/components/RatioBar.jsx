@@ -39,7 +39,7 @@ export default function RatioBar({
         </div>
       </div>
 
-      {/* 中間：兩隊對決數據卡片 (包含揭曉勝出 Crown 錦旗) */}
+      {/* 中間：兩隊對決數據卡片 */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         {/* 王子隊 */}
         <div
@@ -104,7 +104,7 @@ export default function RatioBar({
         </div>
       </div>
 
-      {/* 底部：雙向戰力對決條 (包含雷電衝擊與流動條紋) */}
+      {/* 底部：雙向戰力對決條 */}
       <div className="w-full relative pt-1">
         <div className="w-full h-5 rounded-full bg-slate-100 overflow-hidden flex shadow-inner relative border border-slate-200/80">
           {/* 王子戰力條 */}
@@ -129,7 +129,7 @@ export default function RatioBar({
             </span>
           </div>
 
-          {/* 交界處黃金雷電標誌 (若尚未揭曉) */}
+          {/* 交界處黃金雷電標誌 */}
           {!revealedResult && (
             <div
               style={{ left: `${princePercent}%` }}
@@ -145,7 +145,7 @@ export default function RatioBar({
           )}
         </div>
 
-        {/* 比例條底部對決標語 */}
+        {/* 比例條底部對決標語 (已移除重複的火焰 Icon，修復為乾淨的🔥 對決中) */}
         <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mt-1.5 px-1">
           <span className="flex items-center gap-1 text-sky-700 font-extrabold">
             👦 王子 {princePercent}%
@@ -157,8 +157,8 @@ export default function RatioBar({
             </span>
           ) : (
             <span className="text-amber-600 font-black flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-bounce" />
-              🔥 對決中
+              <span className="animate-bounce inline-block">🔥</span>
+              <span>對決中</span>
             </span>
           )}
 
