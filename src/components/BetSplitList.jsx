@@ -34,7 +34,6 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
 
   const renderBetCard = (bet, isPrince) => {
     const cleanName = bet.name ? bet.name.trim() : '';
-    // 雙重認人機制：相同 ID 或 相同姓名即認定為我的下注 (即使換了瀏覽器一樣認得)
     const isMine = (myBetIds && myBetIds.includes(bet.id)) || (myBetNames && myBetNames.includes(cleanName));
     
     const teamTotal = isPrince ? princeTotal : princessTotal;
@@ -160,7 +159,7 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
             </button>
           </div>
 
-          {/* 名單內容卡片 */}
+          {/* 名單內容卡片 (添加 no-scrollbar 隱藏滾動條) */}
           <div className="w-full">
             {/* 王子隊名單 */}
             {activeTab === 'prince' && (
@@ -170,7 +169,7 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
                     目前尚無人挺王子隊，快點下注按鈕搶先下注！
                   </div>
                 ) : (
-                  <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto pr-0.5">
+                  <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto no-scrollbar">
                     {princeBets.map(b => renderBetCard(b, true))}
                   </div>
                 )}
@@ -185,7 +184,7 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
                     目前尚無人挺公主隊，快點下注按鈕搶先下注！
                   </div>
                 ) : (
-                  <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto pr-0.5">
+                  <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto no-scrollbar">
                     {princessBets.map(b => renderBetCard(b, false))}
                   </div>
                 )}
