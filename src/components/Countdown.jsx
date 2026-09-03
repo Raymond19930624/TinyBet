@@ -52,14 +52,14 @@ export default function Countdown({
     return () => clearInterval(timer);
   }, [cutoffDate, revealDate]);
 
-  const renderTimeUnit = (value, label, colorBg, colorText) => {
+  const renderTimeUnit = (value, label, colorBg, colorText, colorSubText = 'text-slate-500') => {
     const safeValue = isNaN(value) ? 0 : value;
     return (
       <div className={`flex flex-col items-center justify-center p-1.5 rounded-xl ${colorBg} border border-white/60 shadow-2xs min-w-[38px]`}>
         <span className={`text-sm font-black ${colorText} leading-none`}>
           {String(safeValue).padStart(2, '0')}
         </span>
-        <span className="text-[9px] font-bold text-slate-500 mt-0.5 leading-none">
+        <span className={`text-[9px] font-bold ${colorSubText} mt-0.5 leading-none`}>
           {label}
         </span>
       </div>
@@ -122,14 +122,13 @@ export default function Countdown({
     );
   }
 
-  // 尚未揭曉模式 (時鐘加上旋轉走動 animate-spin / 走動計時動畫)
+  // 尚未揭曉模式 ("秒"字標籤也100%改為純白色 text-white)
   return (
     <div className="w-full space-y-2 box-border">
       
       {/* 1. 性別揭曉時刻倒數卡片 */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-purple-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
-          {/* 動態走動閃爍火花 */}
           <div className="p-2 bg-purple-100 text-purple-600 rounded-xl flex-shrink-0">
             <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '4s' }} />
           </div>
@@ -142,17 +141,16 @@ export default function Countdown({
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {renderTimeUnit(revealTimeLeft.days, '天', 'bg-purple-50', 'text-purple-700')}
-          {renderTimeUnit(revealTimeLeft.hours, '時', 'bg-purple-50', 'text-purple-700')}
-          {renderTimeUnit(revealTimeLeft.minutes, '分', 'bg-purple-50', 'text-purple-700')}
-          {renderTimeUnit(revealTimeLeft.seconds, '秒', 'bg-purple-600', 'text-white')}
+          {renderTimeUnit(revealTimeLeft.days, '天', 'bg-purple-50', 'text-purple-700', 'text-slate-500')}
+          {renderTimeUnit(revealTimeLeft.hours, '時', 'bg-purple-50', 'text-purple-700', 'text-slate-500')}
+          {renderTimeUnit(revealTimeLeft.minutes, '分', 'bg-purple-50', 'text-purple-700', 'text-slate-500')}
+          {renderTimeUnit(revealTimeLeft.seconds, '秒', 'bg-purple-600', 'text-white', 'text-white/90')}
         </div>
       </div>
 
-      {/* 2. 下注截止時刻倒數卡片 (時鐘 Icon 加上順時針走動動畫 animate-spin) */}
+      {/* 2. 下注截止時刻倒數卡片 ("秒"字標籤改為純白色 text-white) */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-sky-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
-          {/* 時鐘加上走動旋轉指針特效 */}
           <div className="p-2 bg-sky-100 text-sky-600 rounded-xl flex-shrink-0 relative overflow-hidden">
             <Clock className="w-4 h-4 animate-spin" style={{ animationDuration: '10s' }} />
           </div>
@@ -165,10 +163,10 @@ export default function Countdown({
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {renderTimeUnit(cutoffTimeLeft.days, '天', 'bg-sky-50', 'text-sky-700')}
-          {renderTimeUnit(cutoffTimeLeft.hours, '時', 'bg-sky-50', 'text-sky-700')}
-          {renderTimeUnit(cutoffTimeLeft.minutes, '分', 'bg-sky-50', 'text-sky-700')}
-          {renderTimeUnit(cutoffTimeLeft.seconds, '秒', 'bg-sky-600', 'text-white')}
+          {renderTimeUnit(cutoffTimeLeft.days, '天', 'bg-sky-50', 'text-sky-700', 'text-slate-500')}
+          {renderTimeUnit(cutoffTimeLeft.hours, '時', 'bg-sky-50', 'text-sky-700', 'text-slate-500')}
+          {renderTimeUnit(cutoffTimeLeft.minutes, '分', 'bg-sky-50', 'text-sky-700', 'text-slate-500')}
+          {renderTimeUnit(cutoffTimeLeft.seconds, '秒', 'bg-sky-600', 'text-white', 'text-white/90')}
         </div>
       </div>
 
