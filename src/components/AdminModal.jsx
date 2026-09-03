@@ -345,7 +345,7 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 獨立跳出式「時間選擇器浮窗 (完整年月日 2026/09/05)」 */}
+      {/* 獨立跳出式「時間選擇器浮窗」 */}
       {pickerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
@@ -364,7 +364,7 @@ export default function AdminModal({
               {pickerMode === 'cutoff' ? '設定後時間一到自動停止下注' : '設定性別趴現場的公佈揭曉時間'}
             </p>
 
-            {/* 快捷點擊 (完整顯示 2026/09/05 年月日) */}
+            {/* 快捷點擊 */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               <button
                 onClick={() => handleSetShortcut('5_1700')}
@@ -457,14 +457,14 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 超嗆超幽默彩蛋彈窗 (升級超嗆對白) */}
+      {/* 超嗆超幽默彩蛋彈窗 (修飾對白: 這個密碼是專門釣你們這種想亂搞的小聰明的 😜！) */}
       {easterEggDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-rose-300 text-center">
             <span className="text-5xl mb-2 block animate-bounce">🤡</span>
             <h3 className="text-base font-black text-slate-900 mb-1">哈哈哈抓到了！你還真信提示啊？</h3>
             <p className="text-xs text-slate-600 mb-4 leading-relaxed font-semibold">
-              這個密碼是專門釣你們這種不看提示的小聰明的 😜！<br/>
+              這個密碼是專門釣你們這種想亂搞的小聰明的 😜！<br/>
               想要後台控制權？乖乖去找寶媽跪求真實密碼啦！
             </p>
             <button
