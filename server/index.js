@@ -20,47 +20,8 @@ const io = new Server(httpServer, {
 
 const CLOUD_STORAGE_URL = 'https://api.restful-api.dev/objects/ff808181a0662e5201a0663b9da7000c';
 
-const defaultBets = [
-  {
-    id: 'bet_1788427853888_l0jzt',
-    name: '王奕惟元寶爸',
-    team: 'prince',
-    amount: 500,
-    note: '最好大家都選女的，我一人獨得😆😆😆',
-    isPaid: false,
-    createdAt: '2026-09-03T09:30:53.888Z'
-  },
-  {
-    id: 'bet_1788426928000_jhy02',
-    name: '佳慧姨',
-    team: 'princess',
-    amount: 600,
-    note: '小元寶，乖乖健康長大！王子公主阿姨都愛❤️',
-    isPaid: true,
-    createdAt: '2026-09-03T09:15:28.000Z'
-  },
-  {
-    id: 'bet_1788426779000_ypm01',
-    name: '林以平元寶媽',
-    team: 'princess',
-    amount: 500,
-    note: '元寶乖乖～希望你健康長大我們一起欺負爸爸',
-    isPaid: true,
-    createdAt: '2026-09-03T09:12:59.000Z'
-  },
-  {
-    id: 'bet_1788425403650_9tlm7',
-    name: '林佳瑩',
-    team: 'princess',
-    amount: 600,
-    note: '無條件支持公主🤩',
-    isPaid: true,
-    createdAt: '2026-09-03T08:50:03.650Z'
-  }
-];
-
 const defaultState = {
-  bets: defaultBets,
+  bets: [],
   config: {
     cutoffDate: '2026-09-05T17:00:00+08:00',
     revealDate: '2026-09-05T17:30:00+08:00',
@@ -82,24 +43,20 @@ function normalizeBetTeam(bet) {
 function deduplicateBets(betsArray) {
   if (!Array.isArray(betsArray)) return [];
   const seenIds = new Set();
-  const seenKeys = new Set();
   const result = [];
 
   for (const b of betsArray) {
     if (!b || !b.id) continue;
     const cleanBet = normalizeBetTeam(b);
-    const key = `${cleanBet.name.trim()}_${cleanBet.team}_${cleanBet.amount}`;
-
-    if (!seenIds.has(cleanBet.id) && !seenKeys.has(key)) {
+    if (!seenIds.has(cleanBet.id)) {
       seenIds.add(cleanBet.id);
-      seenKeys.add(key);
       result.push(cleanBet);
     }
   }
   return result;
 }
 
-// 雲端數據庫讀取與時間組態混合保護
+// 雲端數據庫讀取
 async function fetchStateFromCloud() {
   try {
     const response = await fetch(CLOUD_STORAGE_URL);
@@ -118,7 +75,7 @@ async function fetchStateFromCloud() {
   return null;
 }
 
-// 雲端快照同步 (包含時間組態 100% 寫入)
+// 雲端快照強效持久化同步
 async function syncStateToCloud(state) {
   try {
     await fetch(CLOUD_STORAGE_URL, {
@@ -129,7 +86,7 @@ async function syncStateToCloud(state) {
         data: state
       })
     });
-    console.log('State & Config successfully synced to cloud snapshot persistence!');
+    console.log('State & Payment status successfully synced to cloud!');
   } catch (err) {
     console.error('Failed to sync state to cloud snapshot:', err);
   }
@@ -151,18 +108,18 @@ const persistAndBroadcast = (state) => {
   io.emit('stateUpdate', state);
 };
 
-// 伺服器啟動邏輯
+// 伺服器開機：100% 雲端數據庫優先，徹底摒棄伺服器寫死預設值
 async function startServer() {
   const cloudData = await fetchStateFromCloud();
-  if (cloudData && (Array.isArray(cloudData.bets) || cloudData.config)) {
+  if (cloudData && Array.isArray(cloudData.bets)) {
     currentState = {
-      bets: Array.isArray(cloudData.bets) && cloudData.bets.length > 0 ? deduplicateBets(cloudData.bets) : defaultBets,
+      bets: deduplicateBets(cloudData.bets),
       config: {
         ...defaultState.config,
         ...(cloudData.config || {})
       }
     };
-    console.log(`Server initialized with cloud state & config! Cutoff: ${currentState.config.cutoffDate}, Reveal: ${currentState.config.revealDate}`);
+    console.log(`Server initialized with ${currentState.bets.length} cloud bets & payment status!`);
   } else {
     currentState = defaultState;
     syncStateToCloud(currentState);
@@ -175,8 +132,12 @@ async function startServer() {
 
     socket.on('addBet', (newBet) => {
       const cleanBet = normalizeBetTeam(newBet);
-      currentState.bets = deduplicateBets([cleanBet, ...currentState.bets]);
-      persistAndBroadcast(currentState);
+      // 新增下注若同 ID 則不重複新增
+      const existing = currentState.bets.find(b => b.id === cleanBet.id);
+      if (!existing) {
+        currentState.bets = deduplicateBets([cleanBet, ...currentState.bets]);
+        persistAndBroadcast(currentState);
+      }
     });
 
     socket.on('cancelBet', ({ betId }) => {
@@ -191,7 +152,8 @@ async function startServer() {
       if (password !== '17218') return;
       const bet = currentState.bets.find(b => b.id === betId);
       if (bet) {
-        bet.isPaid = isPaid;
+        bet.isPaid = Boolean(isPaid);
+        console.log(`Payment status toggled for ${bet.name} -> ${bet.isPaid ? 'PAID' : 'UNPAID'}`);
         persistAndBroadcast(currentState);
       }
     });
