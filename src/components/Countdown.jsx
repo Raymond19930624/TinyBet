@@ -109,12 +109,13 @@ export default function Countdown({
             </div>
           </div>
 
+          {/* 按鈕修飾為：🎯 命中名單 */}
           <button
             onClick={onReopenRevealModal}
-            className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-900 font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-98 border border-white/80"
+            className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-900 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-98 border border-white/80"
           >
-            <Play className="w-4 h-4 fill-slate-900 text-slate-900" />
-            <span>🎬 重新觀看揭曉瞬間動畫與特效</span>
+            <Trophy className="w-4 h-4 text-amber-500 fill-amber-400" />
+            <span>🎯 命中名單</span>
           </button>
 
         </div>
@@ -122,7 +123,7 @@ export default function Countdown({
     );
   }
 
-  // 尚未揭曉模式 ("秒"字標籤也100%改為純白色 text-white)
+  // 尚未揭曉模式
   return (
     <div className="w-full space-y-2 box-border">
       
@@ -148,7 +149,7 @@ export default function Countdown({
         </div>
       </div>
 
-      {/* 2. 下注截止時刻倒數卡片 ("秒"字標籤改為純白色 text-white) */}
+      {/* 2. 下注截止時刻倒數卡片 */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-sky-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-2 bg-sky-100 text-sky-600 rounded-xl flex-shrink-0 relative overflow-hidden">
