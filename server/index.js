@@ -65,9 +65,18 @@ function saveStateToDisk(state) {
   }
 }
 
-// 雲端快照全自動同步
+// 雲端快照保護 (確保舊有筆數多的歷史備份不被空的開機 state 覆蓋)
 async function syncStateToCloud(state) {
   try {
+    // 先驗證雲端庫，避免空 state 誤覆蓋有資料的雲端庫
+    const currentCloud = await fetchStateFromCloud();
+    if (currentCloud && Array.isArray(currentCloud.bets) && currentCloud.bets.length > state.bets.length) {
+      if (state.bets.length === 0 && currentCloud.bets.length > 0) {
+        console.log('Skipping cloud sync: Cloud has more bets than local empty state!');
+        return;
+      }
+    }
+
     await fetch(CLOUD_STORAGE_URL, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -89,7 +98,6 @@ async function fetchStateFromCloud() {
       const json = await response.json();
       if (json && json.data && Array.isArray(json.data.bets)) {
         json.data.bets = json.data.bets.map(normalizeBetTeam);
-        console.log(`Loaded ${json.data.bets.length} bets from cloud persistence on startup!`);
         return json.data;
       }
     }
@@ -101,11 +109,28 @@ async function fetchStateFromCloud() {
 
 let currentState = loadStateFromDisk();
 
-// 伺服器啟動時優先載入雲端快照
+// 伺服器開機優先雲端合併，確保下注資料 100% 不消失
 fetchStateFromCloud().then((cloudData) => {
-  if (cloudData) {
-    currentState = cloudData;
-    currentState.bets = currentState.bets.map(normalizeBetTeam);
+  if (cloudData && Array.isArray(cloudData.bets) && cloudData.bets.length > 0) {
+    // 合併雲端與本地 bets
+    const localIds = new Set((currentState.bets || []).map(b => b.id));
+    const mergedBets = [...currentState.bets];
+
+    for (const cb of cloudData.bets) {
+      if (!localIds.has(cb.id)) {
+        mergedBets.push(cb);
+      }
+    }
+
+    currentState = {
+      bets: mergedBets.map(normalizeBetTeam),
+      config: {
+        ...cloudData.config,
+        ...currentState.config
+      }
+    };
+
+    console.log(`Merged ${currentState.bets.length} bets from cloud storage on startup!`);
     saveStateToDisk(currentState);
     io.emit('stateUpdate', currentState);
   }
@@ -177,7 +202,6 @@ io.on('connection', (socket) => {
     persistAndBroadcast(currentState);
   });
 
-  // 🌟 新增：只重置性別揭曉結果，100% 保留下注資料
   socket.on('adminResetReveal', ({ password }) => {
     if (password !== '17218') return;
     currentState.config.revealedResult = null;
