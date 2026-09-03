@@ -9,7 +9,6 @@ export default function Countdown({
   grandTotal = 0,
   onReopenRevealModal
 }) {
-  // 安全日期解析函數 (防範 NaN)
   const parseSafeDate = (dateStr, defaultIso) => {
     if (!dateStr) return new Date(defaultIso);
     try {
@@ -67,7 +66,7 @@ export default function Countdown({
     );
   };
 
-  // 🌟 性別已揭曉模式：展示得獎結果廣播卡片 + 🎬 重播揭曉動畫按鈕
+  // 性別已揭曉模式
   if (revealedResult) {
     const isPrince = revealedResult === 'prince';
     const winningBets = bets.filter(b => b.team === revealedResult);
@@ -79,7 +78,6 @@ export default function Countdown({
             ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white border-sky-300 shadow-sky-200'
             : 'bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white border-pink-300 shadow-pink-200'
         }`}>
-          {/* 背景慶祝光芒裝飾 */}
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
 
           <div className="flex items-center justify-between gap-3 mb-2">
@@ -111,7 +109,6 @@ export default function Countdown({
             </div>
           </div>
 
-          {/* 🎬 重新觀看揭曉動畫按鈕 */}
           <button
             onClick={onReopenRevealModal}
             className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-900 font-black text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-98 border border-white/80"
@@ -125,15 +122,16 @@ export default function Countdown({
     );
   }
 
-  // 尚未揭曉模式：正常展示倒數卡片
+  // 尚未揭曉模式 (時鐘加上旋轉走動 animate-spin / 走動計時動畫)
   return (
     <div className="w-full space-y-2 box-border">
       
       {/* 1. 性別揭曉時刻倒數卡片 */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-purple-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
+          {/* 動態走動閃爍火花 */}
           <div className="p-2 bg-purple-100 text-purple-600 rounded-xl flex-shrink-0">
-            <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '6s' }} />
+            <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '4s' }} />
           </div>
           <div>
             <div className="text-xs font-black text-slate-800">揭曉時刻</div>
@@ -151,11 +149,12 @@ export default function Countdown({
         </div>
       </div>
 
-      {/* 2. 下注截止時刻倒數卡片 */}
+      {/* 2. 下注截止時刻倒數卡片 (時鐘 Icon 加上順時針走動動畫 animate-spin) */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-sky-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-2 bg-sky-100 text-sky-600 rounded-xl flex-shrink-0">
-            <Clock className="w-4 h-4 animate-pulse" />
+          {/* 時鐘加上走動旋轉指針特效 */}
+          <div className="p-2 bg-sky-100 text-sky-600 rounded-xl flex-shrink-0 relative overflow-hidden">
+            <Clock className="w-4 h-4 animate-spin" style={{ animationDuration: '10s' }} />
           </div>
           <div>
             <div className="text-xs font-black text-slate-800">投注截止</div>

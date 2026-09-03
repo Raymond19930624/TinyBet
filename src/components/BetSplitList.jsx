@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Clock, Trash2, Heart, Trophy, Sparkles, Crown } from 'lucide-react';
+import { CheckCircle2, Clock, Trash2, Heart, Trophy, Sparkles, Crown, Megaphone } from 'lucide-react';
 import ToastModal from './ToastModal';
 
 export default function BetSplitList({
@@ -129,7 +129,7 @@ export default function BetSplitList({
               onClick={() => handleTriggerCancel(bet)}
               className="px-2 py-0.5 text-rose-600 hover:bg-rose-100/80 rounded-lg transition-all border border-rose-200 flex items-center gap-0.5 font-bold text-[10px]"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
               <span>取消</span>
             </button>
           )}
@@ -143,14 +143,14 @@ export default function BetSplitList({
       <div className="w-full box-border">
         <div className="w-full bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white box-border">
           
-          {/* 區塊標題 (標題右側精準顯示揭曉與對決狀態標籤) */}
-          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between gap-2">
-            <h2 className="text-base font-black text-slate-800 flex-shrink-0">
+          {/* 區塊標題 (標題右側展示「下注後請洽【元寶媽】付款與確認！」走動字幕/提示) */}
+          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between gap-2 overflow-hidden">
+            <h2 className="text-sm font-black text-slate-800 flex-shrink-0">
               全場即時對決動態牆
             </h2>
 
             {revealedResult ? (
-              <div className={`px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm border border-white animate-bounce ${
+              <div className={`px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm border border-white animate-bounce flex-shrink-0 ${
                 revealedResult === 'prince'
                   ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-amber-500 text-white'
                   : 'bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white'
@@ -159,9 +159,12 @@ export default function BetSplitList({
                 <span>揭曉：{revealedResult === 'prince' ? '👦 王子隊勝出' : '👧 公主隊勝出'}！</span>
               </div>
             ) : (
-              <div className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-[11px] font-bold flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>熱烈對決中</span>
+              /* 動態走動跑馬字幕: 下注後請洽【元寶媽】付款與確認！ */
+              <div className="flex-1 min-w-0 bg-amber-50 border border-amber-200/90 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-xs overflow-hidden">
+                <Megaphone className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 animate-bounce" />
+                <div className="text-[11px] font-black text-amber-900 truncate tracking-tight">
+                  下注後請洽【元寶媽】付款與確認！
+                </div>
               </div>
             )}
           </div>
