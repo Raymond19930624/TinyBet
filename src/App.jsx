@@ -22,7 +22,7 @@ export default function App() {
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
 
-  // 1. 自動註冊 Service Worker (Android Chrome 相容必備)
+  // 1. 自動註冊 Service Worker (Android Chrome 相容)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -74,16 +74,14 @@ export default function App() {
     }
   };
 
-  // 🌟 核心：監聽揭曉瞬間！一旦管理者在後台揭曉，全場手機零延遲自動跳出彈窗＋系統層推播通知＋震動
+  // 監聽揭曉瞬間全場跳出 Modal ＋ 推播 ＋ 震動
   useEffect(() => {
     const prevResult = prevRevealedResultRef.current;
     const currentResult = store.config.revealedResult;
 
     if (!prevResult && currentResult) {
-      // 1. 自動跳出全螢幕爆竹煙火 Modal
       setIsRevealModalClosed(false);
 
-      // 2. 觸發手機震動歡慶感應
       if ('vibrate' in navigator) {
         try {
           navigator.vibrate([200, 100, 200, 100, 300]);
@@ -92,7 +90,6 @@ export default function App() {
         }
       }
 
-      // 3. 觸發 Android Chrome 兼容之系統層原生推播通知
       const isPrince = currentResult === 'prince';
       sendNativeNotification('🎉 小元寶性別大揭曉！', {
         body: `驚喜揭曉：小元寶是【${isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝'}】！恭喜猜中的得獎好朋友！`,
@@ -118,7 +115,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 pb-24 font-sans selection:bg-pink-300">
+    <div className={`min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 transition-all ${
+      isLocked ? 'pb-6' : 'pb-24'
+    }`}>
       
       {/* 手機優先最大寬度卡片容器 */}
       <main className="w-full max-w-md mx-auto px-3 space-y-3.5 box-border">
@@ -239,7 +238,7 @@ export default function App() {
       />
 
       {/* 頁尾版權小字 */}
-      <footer className="text-center mt-8 text-[11px] text-slate-600 font-semibold">
+      <footer className="text-center mt-6 text-[11px] text-slate-600 font-semibold">
         小元寶性別趴特別企劃 💕 祝大家玩的開心猜得準確！
       </footer>
 

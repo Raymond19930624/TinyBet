@@ -168,7 +168,7 @@ export default function BetSplitList({
             )}
           </div>
 
-          {/* 雙 Tab 切換按鈕 (高亮完全跟隨 activeTab 點選狀態，揭曉勝出黃金標籤保留於右上角) */}
+          {/* 雙 Tab 切換按鈕 */}
           <div className="grid grid-cols-2 gap-2 mb-3 w-full">
             {/* 王子隊 Tab */}
             <button
@@ -209,13 +209,13 @@ export default function BetSplitList({
             </button>
           </div>
 
-          {/* 名單內容卡片 */}
+          {/* 名單內容卡片 (無資料時採用緊湊精緻 py-4 卡片，消除過大留白) */}
           <div className="w-full">
             {/* 王子隊名單 */}
             {activeTab === 'prince' && (
               <div className="w-full bg-sky-50/50 p-3.5 rounded-2xl border-2 border-sky-100 box-border animate-fadeIn">
                 {princeBets.length === 0 ? (
-                  <div className="w-full py-8 text-center text-sky-400 text-xs font-medium border-2 border-dashed border-sky-200/80 rounded-2xl">
+                  <div className="w-full py-4 px-3 text-center text-sky-500 text-xs font-bold border-2 border-dashed border-sky-200/80 rounded-2xl bg-white/60">
                     {revealedResult ? '王子隊目前尚無下注紀錄' : '目前尚無人挺王子隊，快點下注按鈕搶先下注！'}
                   </div>
                 ) : (
@@ -230,7 +230,7 @@ export default function BetSplitList({
             {activeTab === 'princess' && (
               <div className="w-full bg-pink-50/50 p-3.5 rounded-2xl border-2 border-pink-100 box-border animate-fadeIn">
                 {princessBets.length === 0 ? (
-                  <div className="w-full py-8 text-center text-pink-400 text-xs font-medium border-2 border-dashed border-pink-200/80 rounded-2xl">
+                  <div className="w-full py-4 px-3 text-center text-pink-500 text-xs font-bold border-2 border-dashed border-pink-200/80 rounded-2xl bg-white/60">
                     {revealedResult ? '公主隊目前尚無下注紀錄' : '目前尚無人挺公主隊，快點下注按鈕搶先下注！'}
                   </div>
                 ) : (
