@@ -18,10 +18,59 @@ const io = new Server(httpServer, {
   }
 });
 
+const DATA_FILE = path.join(__dirname, 'data.json');
 const CLOUD_STORAGE_URL = 'https://api.restful-api.dev/objects/ff808181a0662e5201a0663b9da7000c';
 
+const masterBets = [
+  {
+    id: 'bet_1788428604000_ssam1',
+    name: '素韶阿嬤',
+    team: 'princess',
+    amount: 500,
+    note: '男生女生一樣好，阿嬤2邊都下注',
+    isPaid: true,
+    createdAt: '2026-09-03T09:43:24.000Z'
+  },
+  {
+    id: 'bet_1788427853888_l0jzt',
+    name: '王奕惟元寶爸',
+    team: 'prince',
+    amount: 500,
+    note: '最好大家都選女的，我一人獨得😆😆😆',
+    isPaid: true,
+    createdAt: '2026-09-03T09:30:53.888Z'
+  },
+  {
+    id: 'bet_1788426928000_jhy02',
+    name: '佳慧姨',
+    team: 'princess',
+    amount: 600,
+    note: '小元寶，乖乖健康長大！王子公主阿姨都愛❤️',
+    isPaid: true,
+    createdAt: '2026-09-03T09:15:28.000Z'
+  },
+  {
+    id: 'bet_1788426779000_ypm01',
+    name: '林以平元寶媽',
+    team: 'princess',
+    amount: 500,
+    note: '元寶乖乖～希望你健康長大我們一起欺負爸爸',
+    isPaid: true,
+    createdAt: '2026-09-03T09:12:59.000Z'
+  },
+  {
+    id: 'bet_1788425403650_9tlm7',
+    name: '林佳瑩',
+    team: 'princess',
+    amount: 600,
+    note: '無條件支持公主🤩',
+    isPaid: true,
+    createdAt: '2026-09-03T08:50:03.650Z'
+  }
+];
+
 const defaultState = {
-  bets: [],
+  bets: masterBets,
   config: {
     cutoffDate: '2026-09-05T17:00:00+08:00',
     revealDate: '2026-09-05T17:30:00+08:00',
@@ -56,16 +105,37 @@ function deduplicateBets(betsArray) {
   return result;
 }
 
-// 雲端數據庫讀取
+function loadStateFromDisk() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      const state = JSON.parse(raw);
+      if (state && Array.isArray(state.bets) && state.bets.length > 0) {
+        state.bets = deduplicateBets(state.bets);
+        return state;
+      }
+    }
+  } catch (err) {
+    console.error('Error reading data.json:', err);
+  }
+  return defaultState;
+}
+
+function saveStateToDisk(state) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error saving data.json:', err);
+  }
+}
+
 async function fetchStateFromCloud() {
   try {
     const response = await fetch(CLOUD_STORAGE_URL);
     if (response.ok) {
       const json = await response.json();
-      if (json && json.data) {
-        if (Array.isArray(json.data.bets)) {
-          json.data.bets = deduplicateBets(json.data.bets);
-        }
+      if (json && json.data && Array.isArray(json.data.bets) && json.data.bets.length > 0) {
+        json.data.bets = deduplicateBets(json.data.bets);
         return json.data;
       }
     }
@@ -75,7 +145,6 @@ async function fetchStateFromCloud() {
   return null;
 }
 
-// 雲端快照強效持久化同步
 async function syncStateToCloud(state) {
   try {
     await fetch(CLOUD_STORAGE_URL, {
@@ -86,13 +155,12 @@ async function syncStateToCloud(state) {
         data: state
       })
     });
-    console.log('State & Payment status successfully synced to cloud!');
   } catch (err) {
     console.error('Failed to sync state to cloud snapshot:', err);
   }
 }
 
-let currentState = defaultState;
+let currentState = loadStateFromDisk();
 
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
@@ -104,24 +172,26 @@ if (fs.existsSync(distPath)) {
 
 const persistAndBroadcast = (state) => {
   state.bets = deduplicateBets(state.bets);
+  saveStateToDisk(state);
   syncStateToCloud(state);
   io.emit('stateUpdate', state);
 };
 
-// 伺服器開機：100% 雲端數據庫優先，徹底摒棄伺服器寫死預設值
 async function startServer() {
+  // 開機優先載入硬碟，並同步拉取雲端補充
+  saveStateToDisk(currentState);
+
   const cloudData = await fetchStateFromCloud();
-  if (cloudData && Array.isArray(cloudData.bets)) {
+  if (cloudData && Array.isArray(cloudData.bets) && cloudData.bets.length >= currentState.bets.length) {
     currentState = {
       bets: deduplicateBets(cloudData.bets),
       config: {
-        ...defaultState.config,
+        ...currentState.config,
         ...(cloudData.config || {})
       }
     };
-    console.log(`Server initialized with ${currentState.bets.length} cloud bets & payment status!`);
+    saveStateToDisk(currentState);
   } else {
-    currentState = defaultState;
     syncStateToCloud(currentState);
   }
 
@@ -132,7 +202,6 @@ async function startServer() {
 
     socket.on('addBet', (newBet) => {
       const cleanBet = normalizeBetTeam(newBet);
-      // 新增下注若同 ID 則不重複新增
       const existing = currentState.bets.find(b => b.id === cleanBet.id);
       if (!existing) {
         currentState.bets = deduplicateBets([cleanBet, ...currentState.bets]);
@@ -153,7 +222,6 @@ async function startServer() {
       const bet = currentState.bets.find(b => b.id === betId);
       if (bet) {
         bet.isPaid = Boolean(isPaid);
-        console.log(`Payment status toggled for ${bet.name} -> ${bet.isPaid ? 'PAID' : 'UNPAID'}`);
         persistAndBroadcast(currentState);
       }
     });
