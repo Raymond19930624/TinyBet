@@ -134,8 +134,10 @@ async function fetchStateFromCloud() {
     const response = await fetch(CLOUD_STORAGE_URL);
     if (response.ok) {
       const json = await response.json();
-      if (json && json.data && Array.isArray(json.data.bets) && json.data.bets.length > 0) {
-        json.data.bets = deduplicateBets(json.data.bets);
+      if (json && json.data) {
+        if (Array.isArray(json.data.bets)) {
+          json.data.bets = deduplicateBets(json.data.bets);
+        }
         return json.data;
       }
     }
@@ -155,6 +157,7 @@ async function syncStateToCloud(state) {
         data: state
       })
     });
+    console.log('State & Master Config successfully synced to cloud storage!');
   } catch (err) {
     console.error('Failed to sync state to cloud snapshot:', err);
   }
@@ -178,19 +181,28 @@ const persistAndBroadcast = (state) => {
 };
 
 async function startServer() {
-  // 開機優先載入硬碟，並同步拉取雲端補充
+  // 開機優先載入硬碟
   saveStateToDisk(currentState);
 
+  // 從雲端抓取最高權威的「管理者自訂時間 config」與「歷史下注」
   const cloudData = await fetchStateFromCloud();
-  if (cloudData && Array.isArray(cloudData.bets) && cloudData.bets.length >= currentState.bets.length) {
+  if (cloudData) {
+    const cloudBets = Array.isArray(cloudData.bets) && cloudData.bets.length > 0 
+      ? deduplicateBets([...cloudData.bets, ...currentState.bets])
+      : currentState.bets;
+
+    // 🌟 時間設定：優先採用雲端上記錄的管理者自訂時間！
+    const masterConfig = {
+      ...currentState.config,
+      ...(cloudData.config || {})
+    };
+
     currentState = {
-      bets: deduplicateBets(cloudData.bets),
-      config: {
-        ...currentState.config,
-        ...(cloudData.config || {})
-      }
+      bets: cloudBets,
+      config: masterConfig
     };
     saveStateToDisk(currentState);
+    console.log(`Server initialized! Time config locked from cloud: Cutoff=${currentState.config.cutoffDate}, Reveal=${currentState.config.revealDate}`);
   } else {
     syncStateToCloud(currentState);
   }
@@ -235,12 +247,14 @@ async function startServer() {
     socket.on('adminSetCutoff', ({ cutoffDate, password }) => {
       if (password !== '17218') return;
       currentState.config.cutoffDate = cutoffDate;
+      console.log('Cutoff date updated by admin:', cutoffDate);
       persistAndBroadcast(currentState);
     });
 
     socket.on('adminSetRevealDate', ({ revealDate, password }) => {
       if (password !== '17218') return;
       currentState.config.revealDate = revealDate;
+      console.log('Reveal date updated by admin:', revealDate);
       persistAndBroadcast(currentState);
     });
 
