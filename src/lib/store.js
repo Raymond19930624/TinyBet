@@ -255,6 +255,19 @@ export function useGenderBetStore() {
     return true;
   };
 
+  // 🌟 只重置性別揭曉結果，100% 保留下注資料
+  const adminResetReveal = (password) => {
+    if (password !== '17218') return false;
+
+    if (isConnected && socket) {
+      socket.emit('adminResetReveal', { password });
+    } else {
+      const nextConfig = { ...data.config, revealedResult: null };
+      updateLocalState({ ...data, config: nextConfig });
+    }
+    return true;
+  };
+
   const adminResetAll = (password) => {
     if (password !== '17218') return false;
 
@@ -313,6 +326,7 @@ export function useGenderBetStore() {
     adminSetCutoff,
     adminSetRevealDate,
     adminSetReveal,
+    adminResetReveal,
     adminResetAll
   };
 }

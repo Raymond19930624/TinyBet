@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles, Copy, BellRing, PartyPopper } from 'lucide-react';
+import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles, Copy, RotateCcw } from 'lucide-react';
 import { exportBetsToCsv } from '../lib/exportCsv';
 import ToastModal from './ToastModal';
 
@@ -13,6 +13,7 @@ export default function AdminModal({
   onSetCutoff,
   onSetRevealDate,
   onSetReveal,
+  onResetReveal,
   onResetAll,
   onTestPushNotification,
   onTestRevealEffect
@@ -27,9 +28,13 @@ export default function AdminModal({
   const [pickerMode, setPickerMode] = useState(null);
   const [tempDate, setTempDate] = useState('');
 
-  // 多重防呆重置 Modal 狀態
+  // 多重防呆重置全站 Modal 狀態
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetConfirmInput, setResetConfirmInput] = useState('');
+
+  // 🌟 專屬防呆重置性別揭曉 Modal 狀態 (保留下注資料)
+  const [isResetRevealModalOpen, setIsResetRevealModalOpen] = useState(false);
+  const [resetRevealConfirmInput, setResetRevealConfirmInput] = useState('');
 
   // 通用 Toast 浮窗
   const [toast, setToast] = useState({ isOpen: false, title: '', message: '', type: 'info' });
@@ -117,6 +122,24 @@ export default function AdminModal({
     });
   };
 
+  // 執行重置性別揭曉 (防呆)
+  const handleExecuteResetReveal = () => {
+    if (resetRevealConfirmInput.trim() !== '重置揭曉') return;
+
+    if (onResetReveal) {
+      onResetReveal(activeAuthPassword);
+    }
+    setIsResetRevealModalOpen(false);
+    setResetRevealConfirmInput('');
+    setToast({
+      isOpen: true,
+      title: '揭曉狀態已重置',
+      message: '性別揭曉狀態已成功還原為未揭曉！【下注資料 100% 完整保留】！',
+      type: 'success'
+    });
+  };
+
+  // 執行重置全站下注 (防呆)
   const handleExecuteResetAll = () => {
     if (resetConfirmInput.trim() !== '重置') return;
 
@@ -137,9 +160,16 @@ export default function AdminModal({
       if (navigator.clipboard) {
         navigator.clipboard.writeText('重置');
       }
-    } catch {
-      // safe fallback
-    }
+    } catch {}
+  };
+
+  const handleCopyAndFillResetRevealText = () => {
+    setResetRevealConfirmInput('重置揭曉');
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText('重置揭曉');
+      }
+    } catch {}
   };
 
   const formatDisplayTime = (isoString) => {
@@ -248,11 +278,12 @@ export default function AdminModal({
                 </div>
               </div>
 
-              {/* 2. 揭曉結果設定 */}
-              <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/80">
-                <label className="block text-xs font-black text-amber-900 uppercase tracking-wider mb-2">
+              {/* 2. 揭曉結果設定 ＆ 獨立重置揭曉按鈕 (防呆) */}
+              <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/80 space-y-2.5">
+                <label className="block text-xs font-black text-amber-900 uppercase tracking-wider">
                   🎉 性別揭曉結果 (目前: {config.revealedResult === 'prince' ? '👦 王子隊' : config.revealedResult === 'princess' ? '👧 公主隊' : '未揭曉'})
                 </label>
+
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => handleTriggerReveal('prince', '👦 王子隊')}
@@ -276,6 +307,20 @@ export default function AdminModal({
                     👧 公主隊
                   </button>
                 </div>
+
+                {/* 🔄 獨立重置性別揭曉按鈕 (只重置揭曉，100% 保留下注) */}
+                {config.revealedResult && (
+                  <button
+                    onClick={() => {
+                      setResetRevealConfirmInput('');
+                      setIsResetRevealModalOpen(true);
+                    }}
+                    className="w-full py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-black text-xs rounded-xl transition-all flex items-center justify-center gap-1 active:scale-98"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-800" />
+                    <span>重置性別揭曉 (100% 保留下注資料)</span>
+                  </button>
+                )}
               </div>
 
               {/* 3. 匯出 Excel 報表 */}
@@ -343,7 +388,7 @@ export default function AdminModal({
                 )}
               </div>
 
-              {/* 5. 🚨 多重防呆一鍵重置區域 */}
+              {/* 5. 🚨 多重防呆一鍵重置全站區域 */}
               <div className="pt-3 border-t border-slate-200">
                 <button
                   onClick={() => {
@@ -418,7 +463,77 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗」 */}
+      {/* 🔄 專屬防呆「重置性別揭曉」確認彈窗 (100% 保留下注資料) */}
+      {isResetRevealModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-amber-200 relative box-border">
+            <button
+              onClick={() => setIsResetRevealModalOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-3 text-amber-600">
+              <RotateCcw className="w-6 h-6 animate-spin" style={{ animationDuration: '6s' }} />
+              <h3 className="text-base font-black text-slate-800">重置性別揭曉確認 (防呆)</h3>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-bold mb-4 space-y-1">
+              <p>⚠️ 此操作僅會將揭曉狀態還原為『未揭曉』，並重新開放倒數與下注。</p>
+              <p className="text-emerald-700 font-black">✅ 全場所有親友的下注紀錄與付款狀態【100% 完整保留】！</p>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-slate-700">
+                  請點擊
+                  <button
+                    type="button"
+                    onClick={handleCopyAndFillResetRevealText}
+                    className="inline-flex items-center gap-0.5 mx-1 px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-black rounded-lg transition-all active:scale-95 cursor-pointer text-xs"
+                    title="點擊自動帶入"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>【重置揭曉】</span>
+                  </button>
+                  確認：
+                </label>
+              </div>
+
+              <input
+                type="text"
+                placeholder="請點擊上方『重置揭曉』鍵帶入"
+                value={resetRevealConfirmInput}
+                onChange={(e) => setResetRevealConfirmInput(e.target.value)}
+                className="w-full px-3 py-2 border-2 border-slate-200 focus:border-amber-500 rounded-2xl text-xs font-black text-slate-800 outline-none transition-all"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setIsResetRevealModalOpen(false)}
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-2xl transition-all"
+              >
+                取消保留
+              </button>
+              <button
+                onClick={handleExecuteResetReveal}
+                disabled={resetRevealConfirmInput.trim() !== '重置揭曉'}
+                className={`py-2.5 font-black text-xs rounded-2xl shadow-md transition-all ${
+                  resetRevealConfirmInput.trim() === '重置揭曉'
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer scale-102'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                確認重置揭曉 🔄
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚨 獨立跳出式「多重防呆重置全站確認彈窗」 */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-rose-100 relative box-border">
@@ -431,7 +546,7 @@ export default function AdminModal({
 
             <div className="flex items-center gap-2 mb-3 text-rose-600">
               <AlertTriangle className="w-6 h-6 animate-bounce" />
-              <h3 className="text-base font-black text-slate-800">危險！多重防呆重置確認</h3>
+              <h3 className="text-base font-black text-slate-800">危險！多重防呆重置全站</h3>
             </div>
 
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 font-bold mb-4 space-y-1">

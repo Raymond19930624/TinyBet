@@ -65,7 +65,7 @@ function saveStateToDisk(state) {
   }
 }
 
-// 雲端快照全自動同步 (100% 確保全數據持久化)
+// 雲端快照全自動同步
 async function syncStateToCloud(state) {
   try {
     await fetch(CLOUD_STORAGE_URL, {
@@ -101,7 +101,7 @@ async function fetchStateFromCloud() {
 
 let currentState = loadStateFromDisk();
 
-// 伺服器啟動時，優先從雲端載入最新快照資料並修復 team
+// 伺服器啟動時優先載入雲端快照
 fetchStateFromCloud().then((cloudData) => {
   if (cloudData) {
     currentState = cloudData;
@@ -127,7 +127,6 @@ const persistAndBroadcast = (state) => {
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  // 連線發送前校正 team
   currentState.bets = currentState.bets.map(normalizeBetTeam);
   socket.emit('stateUpdate', currentState);
 
@@ -175,6 +174,13 @@ io.on('connection', (socket) => {
   socket.on('adminSetReveal', ({ result, password }) => {
     if (password !== '17218') return;
     currentState.config.revealedResult = result;
+    persistAndBroadcast(currentState);
+  });
+
+  // 🌟 新增：只重置性別揭曉結果，100% 保留下注資料
+  socket.on('adminResetReveal', ({ password }) => {
+    if (password !== '17218') return;
+    currentState.config.revealedResult = null;
     persistAndBroadcast(currentState);
   });
 

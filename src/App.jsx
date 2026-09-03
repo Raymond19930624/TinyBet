@@ -177,7 +177,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 pb-6 box-border relative">
       
-      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner (揭曉瞬間 100% 彈出) */}
+      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner */}
       {pushBanner.isOpen && (
         <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-3.5 bg-gradient-to-r from-purple-700 via-indigo-700 to-pink-700 text-white rounded-3xl shadow-2xl border-2 border-yellow-300 animate-slideDown flex items-start gap-3 box-border">
           <div className="p-2 bg-yellow-400 text-purple-950 rounded-2xl flex-shrink-0 animate-bounce">
@@ -301,6 +301,7 @@ export default function App() {
         onSetCutoff={store.adminSetCutoff}
         onSetRevealDate={store.adminSetRevealDate}
         onSetReveal={store.adminSetReveal}
+        onResetReveal={store.adminResetReveal}
         onResetAll={store.adminResetAll}
         onTestPushNotification={handleTestPushNotification}
         onTestRevealEffect={handleTestRevealEffect}
