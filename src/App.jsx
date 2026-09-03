@@ -39,7 +39,7 @@ export default function App() {
           onReopenRevealModal={() => setIsRevealModalClosed(false)}
         />
 
-        {/* 3. 對決金額與比例對決條 */}
+        {/* 3. 對決金額與比例對決條 (傳入 revealedResult) */}
         <RatioBar
           princeTotal={store.princeTotal}
           princessTotal={store.princessTotal}
@@ -48,9 +48,10 @@ export default function App() {
           princessPercent={store.princessPercent}
           totalBettorsCount={store.totalBettorsCount}
           leader={store.leader}
+          revealedResult={store.config.revealedResult}
         />
 
-        {/* 4. 即時對決名單牆 */}
+        {/* 4. 即時對決名單牆 (傳入 revealedResult) */}
         <BetSplitList
           bets={store.bets}
           myBetIds={store.myBetIds}
@@ -58,6 +59,7 @@ export default function App() {
           princeTotal={store.princeTotal}
           princessTotal={store.princessTotal}
           grandTotal={store.grandTotal}
+          revealedResult={store.config.revealedResult}
           onCancelBet={store.cancelBet}
         />
       </main>

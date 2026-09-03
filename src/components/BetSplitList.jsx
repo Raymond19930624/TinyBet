@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Clock, Trash2, Heart, Trophy, Sparkles } from 'lucide-react';
+import { CheckCircle2, Clock, Trash2, Heart, Trophy, Sparkles, Crown } from 'lucide-react';
 import ToastModal from './ToastModal';
 
-export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], princeTotal, princessTotal, grandTotal, onCancelBet }) {
+export default function BetSplitList({
+  bets,
+  myBetIds = [],
+  myBetNames = [],
+  princeTotal,
+  princessTotal,
+  grandTotal,
+  revealedResult,
+  onCancelBet
+}) {
   const [activeTab, setActiveTab] = useState('prince');
   
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, betId: null, betName: '', betAmount: 0 });
@@ -38,12 +47,15 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
     
     const teamTotal = isPrince ? princeTotal : princessTotal;
     const winPayout = calculateWinPayout(bet.amount, teamTotal);
+    const isWinningTeam = revealedResult === (isPrince ? 'prince' : 'princess');
 
     return (
       <div
         key={bet.id}
         className={`w-full p-3.5 rounded-2xl transition-all relative box-border ${
-          isMine
+          isWinningTeam
+            ? 'bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 border-3 border-amber-500 shadow-md ring-2 ring-amber-300 scale-[1.01]'
+            : isMine
             ? 'bg-gradient-to-r from-amber-50/80 via-white to-amber-50/80 border-3 border-amber-600/90 shadow-md shadow-amber-100 ring-3 ring-amber-300/70 scale-[1.01]'
             : isPrince
             ? 'bg-sky-50/70 border-2 border-sky-200'
@@ -55,7 +67,13 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-base flex-shrink-0">{isPrince ? '👦' : '👧'}</span>
             <span className="font-black text-slate-800 text-sm truncate">{bet.name}</span>
-            {isMine && (
+            {isWinningTeam && (
+              <span className="px-2 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] font-black rounded-full shadow-xs border border-amber-300 flex items-center gap-0.5 flex-shrink-0">
+                <Crown className="w-3 h-3 text-yellow-100 fill-yellow-100 animate-bounce" />
+                恭喜獲勝
+              </span>
+            )}
+            {isMine && !isWinningTeam && (
               <span className="px-2 py-0.5 bg-gradient-to-r from-amber-600 to-amber-700 text-white text-[10px] font-black rounded-full shadow-xs border border-amber-400 flex items-center gap-0.5 flex-shrink-0">
                 <Sparkles className="w-3 h-3 text-amber-200 fill-amber-200" />
                 我的下注
@@ -64,7 +82,7 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
           </div>
 
           <div className="text-right flex-shrink-0">
-            <div className={`text-base font-black ${isMine ? 'text-amber-950' : 'text-slate-900'}`}>
+            <div className={`text-base font-black ${isMine || isWinningTeam ? 'text-amber-950' : 'text-slate-900'}`}>
               ${Number(bet.amount).toLocaleString('en-US')}
             </div>
           </div>
@@ -72,11 +90,11 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
 
         {/* 獎金估算 Badge */}
         <div className={`mb-1.5 p-1.5 rounded-xl border flex items-center justify-between text-xs ${
-          isMine ? 'bg-amber-100/40 border-amber-300/80' : 'bg-white/80 border-amber-200/80'
+          isWinningTeam ? 'bg-amber-100/60 border-amber-400' : isMine ? 'bg-amber-100/40 border-amber-300/80' : 'bg-white/80 border-amber-200/80'
         }`}>
           <span className="text-slate-600 font-bold text-[11px] flex items-center gap-1">
             <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-            若獲勝可得彩金:
+            {isWinningTeam ? '🎉 得彩金:' : '若獲勝可得彩金:'}
           </span>
           <span className="font-black text-amber-800 text-xs">
             ${Number(winPayout).toLocaleString('en-US')}
@@ -106,7 +124,7 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
           </div>
 
           {/* 取消按鈕 */}
-          {isMine && !bet.isPaid && (
+          {isMine && !bet.isPaid && !revealedResult && (
             <button
               onClick={() => handleTriggerCancel(bet)}
               className="px-2 py-0.5 text-rose-600 hover:bg-rose-100/80 rounded-lg transition-all border border-rose-200 flex items-center gap-0.5 font-bold text-[10px]"
@@ -126,47 +144,67 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
         <div className="w-full bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white box-border">
           
           {/* 區塊標題 */}
-          <div className="mb-3 pb-2 border-b border-slate-100">
+          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-base font-black text-slate-800">
               全場即時對決動態牆
             </h2>
+            {revealedResult && (
+              <span className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] font-black rounded-full shadow-xs flex items-center gap-1">
+                <Crown className="w-3 h-3 text-yellow-100 fill-yellow-100" />
+                揭曉公告
+              </span>
+            )}
           </div>
 
-          {/* 雙 Tab 切換按鈕 */}
+          {/* 雙 Tab 切換按鈕 (揭曉勝出者特別亮記) */}
           <div className="grid grid-cols-2 gap-2 mb-3 w-full">
             <button
               onClick={() => setActiveTab('prince')}
-              className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 box-border ${
-                activeTab === 'prince'
+              className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 relative box-border ${
+                revealedResult === 'prince'
+                  ? 'bg-sky-500 text-white border-amber-400 shadow-md shadow-sky-200 scale-[1.01]'
+                  : activeTab === 'prince'
                   ? 'bg-sky-500 text-white border-sky-600 shadow-md shadow-sky-200 scale-[1.01]'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50'
               }`}
             >
+              {revealedResult === 'prince' && (
+                <span className="absolute -top-2 right-2 px-1.5 py-0.2 bg-amber-400 text-amber-950 text-[9px] font-black rounded-full shadow border border-white">
+                  👑 獲勝
+                </span>
+              )}
               <span className="text-lg leading-none mb-0.5">👦</span>
               <span className="font-extrabold text-xs leading-tight">王子隊</span>
             </button>
 
             <button
               onClick={() => setActiveTab('princess')}
-              className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 box-border ${
-                activeTab === 'princess'
+              className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 relative box-border ${
+                revealedResult === 'princess'
+                  ? 'bg-pink-500 text-white border-amber-400 shadow-md shadow-pink-200 scale-[1.01]'
+                  : activeTab === 'princess'
                   ? 'bg-pink-500 text-white border-pink-600 shadow-md shadow-pink-200 scale-[1.01]'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-pink-50'
               }`}
             >
+              {revealedResult === 'princess' && (
+                <span className="absolute -top-2 right-2 px-1.5 py-0.2 bg-amber-400 text-amber-950 text-[9px] font-black rounded-full shadow border border-white">
+                  👑 獲勝
+                </span>
+              )}
               <span className="text-lg leading-none mb-0.5">👧</span>
               <span className="font-extrabold text-xs leading-tight">公主隊</span>
             </button>
           </div>
 
-          {/* 名單內容卡片 (添加 no-scrollbar 隱藏滾動條) */}
+          {/* 名單內容卡片 */}
           <div className="w-full">
             {/* 王子隊名單 */}
             {activeTab === 'prince' && (
               <div className="w-full bg-sky-50/50 p-3 rounded-2xl border-2 border-sky-100 box-border animate-fadeIn">
                 {princeBets.length === 0 ? (
                   <div className="w-full py-8 text-center text-sky-400 text-xs font-medium border-2 border-dashed border-sky-200/80 rounded-2xl">
-                    目前尚無人挺王子隊，快點下注按鈕搶先下注！
+                    {revealedResult ? '王子隊目前尚無下注紀錄' : '目前尚無人挺王子隊，快點下注按鈕搶先下注！'}
                   </div>
                 ) : (
                   <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto no-scrollbar">
@@ -181,7 +219,7 @@ export default function BetSplitList({ bets, myBetIds = [], myBetNames = [], pri
               <div className="w-full bg-pink-50/50 p-3 rounded-2xl border-2 border-pink-100 box-border animate-fadeIn">
                 {princessBets.length === 0 ? (
                   <div className="w-full py-8 text-center text-pink-400 text-xs font-medium border-2 border-dashed border-pink-200/80 rounded-2xl">
-                    目前尚無人挺公主隊，快點下注按鈕搶先下注！
+                    {revealedResult ? '公主隊目前尚無下注紀錄' : '目前尚無人挺公主隊，快點下注按鈕搶先下注！'}
                   </div>
                 ) : (
                   <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto no-scrollbar">
