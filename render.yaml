@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: TinyDays
+    name: yuanbao-gender-reveal
     env: node
     buildCommand: pnpm install && npx vite build
     startCommand: node server/index.js
