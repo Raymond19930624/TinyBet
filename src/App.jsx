@@ -15,6 +15,7 @@ export default function App() {
   const [isBetModalOpen, setIsBetModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isRevealModalClosed, setIsRevealModalClosed] = useState(false);
+  const [testRevealMode, setTestRevealMode] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState('default');
 
   // 手機端專屬：頂部強效懸浮廣播 Push Banner
@@ -25,7 +26,7 @@ export default function App() {
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
 
-  // 1. 自動註冊 Service Worker (Android 行動版強效支援)
+  // 1. 自動註冊 Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -59,7 +60,6 @@ export default function App() {
     }
   };
 
-  // 相容 Android Chrome 手機與桌面端的強效 Native Notification 函式
   const sendNativeNotification = (title, options) => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
@@ -91,7 +91,40 @@ export default function App() {
     }
   };
 
-  // 🌟 監聽揭曉瞬間！手機端 100% 震撼雙重推播：頂部強效 Banner ＋ 系統通知 ＋ 全螢幕煙火 ＋ 震動
+  // 測試推播功能觸發
+  const handleTestPushNotification = () => {
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate([200, 100, 200]);
+      } catch (e) {}
+    }
+
+    setPushBanner({
+      isOpen: true,
+      title: '🔔【測試推播成功】',
+      message: '這是一道測試即時推播訊息，代表您的手機推播功能一切正常！'
+    });
+
+    sendNativeNotification('🔔【測試推播成功】', {
+      body: '這是一道測試即時推播訊息，代表您的手機推播功能一切正常！',
+      icon: '/favicon.ico',
+      tag: 'test-push-notification',
+      renotify: true,
+      requireInteraction: true
+    });
+
+    setTimeout(() => {
+      setPushBanner(prev => ({ ...prev, isOpen: false }));
+    }, 4500);
+  };
+
+  // 測試揭曉煙火與 Modal 觸發
+  const handleTestRevealEffect = () => {
+    setTestRevealMode(true);
+    setIsRevealModalClosed(false);
+  };
+
+  // 監聽真實揭曉瞬間！
   useEffect(() => {
     const prevResult = prevRevealedResultRef.current;
     const currentResult = store.config.revealedResult;
@@ -100,26 +133,20 @@ export default function App() {
       const isPrince = currentResult === 'prince';
       const resultText = isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝';
 
-      // 1. 自動跳出全螢幕爆竹煙火 Modal
       setIsRevealModalClosed(false);
 
-      // 2. 觸發手機派對歡慶雙重震動
       if ('vibrate' in navigator) {
         try {
           navigator.vibrate([200, 100, 200, 100, 300]);
-        } catch (e) {
-          // safe fallback
-        }
+        } catch (e) {}
       }
 
-      // 3. 彈出手機前台專屬【頂部強效懸浮廣播 Push Banner】 (手機端 100% 必定亮起)
       setPushBanner({
         isOpen: true,
         title: '🎉 小元寶性別大揭曉！',
         message: `驚喜揭曉：小元寶是【${resultText}】！恭喜得獎者！`
       });
 
-      // 4. 發送系統層原生推播
       sendNativeNotification('🎉 小元寶性別大揭曉！', {
         body: `驚喜揭曉：小元寶是【${resultText}】！恭喜猜中的得獎好朋友！`,
         icon: '/favicon.ico',
@@ -145,10 +172,12 @@ export default function App() {
     });
   };
 
+  const activeRevealResult = store.config.revealedResult || (testRevealMode ? 'prince' : null);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 pb-6 box-border relative">
       
-      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner (揭曉瞬間 100% 彈出) */}
+      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner */}
       {pushBanner.isOpen && (
         <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-3.5 bg-gradient-to-r from-purple-700 via-indigo-700 to-pink-700 text-white rounded-3xl shadow-2xl border-2 border-yellow-300 animate-slideDown flex items-start gap-3 box-border">
           <div className="p-2 bg-yellow-400 text-purple-950 rounded-2xl flex-shrink-0 animate-bounce">
@@ -273,15 +302,20 @@ export default function App() {
         onSetRevealDate={store.adminSetRevealDate}
         onSetReveal={store.adminSetReveal}
         onResetAll={store.adminResetAll}
+        onTestPushNotification={handleTestPushNotification}
+        onTestRevealEffect={handleTestRevealEffect}
       />
 
       {/* 揭曉結果彈窗 */}
-      {store.config.revealedResult && !isRevealModalClosed && (
+      {activeRevealResult && !isRevealModalClosed && (
         <RevealModal
-          revealedResult={store.config.revealedResult}
+          revealedResult={activeRevealResult}
           bets={store.bets}
           grandTotal={store.grandTotal}
-          onClose={() => setIsRevealModalClosed(true)}
+          onClose={() => {
+            setIsRevealModalClosed(true);
+            setTestRevealMode(false);
+          }}
         />
       )}
 
