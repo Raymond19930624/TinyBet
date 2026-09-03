@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Sparkles, Trophy, Play, PartyPopper, Calendar } from 'lucide-react';
+import { Clock, Sparkles, PartyPopper, RefreshCw, Trophy } from 'lucide-react';
 
 export default function Countdown({
   cutoffDate,
@@ -9,180 +9,175 @@ export default function Countdown({
   grandTotal = 0,
   onReopenRevealModal
 }) {
-  const parseSafeDate = (dateStr, defaultIso) => {
-    if (!dateStr) return new Date(defaultIso);
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) {
-        return new Date(defaultIso);
-      }
-      return d;
-    } catch {
-      return new Date(defaultIso);
-    }
-  };
-
-  const formatDisplayTimeStr = (targetDate) => {
-    try {
-      const year = targetDate.getFullYear();
-      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
-      const day = String(targetDate.getDate()).padStart(2, '0');
-      const hours = String(targetDate.getHours()).padStart(2, '0');
-      const minutes = String(targetDate.getMinutes()).padStart(2, '0');
-      return `${year}/${month}/${day} ${hours}:${minutes}`;
-    } catch {
-      return '';
-    }
-  };
-
-  const calculateTimeLeft = (targetDate) => {
-    const difference = targetDate.getTime() - new Date().getTime();
-    if (difference <= 0) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, isPassed: true };
-    }
-
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((difference / 1000 / 60) % 60),
-      seconds: Math.floor((difference / 1000) % 60),
-      isPassed: false
-    };
-  };
-
-  const cutoffTarget = parseSafeDate(cutoffDate, '2026-09-05T17:00:00+08:00');
-  const revealTarget = parseSafeDate(revealDate, '2026-09-05T17:30:00+08:00');
-
-  const formattedCutoffStr = formatDisplayTimeStr(cutoffTarget);
-  const formattedRevealStr = formatDisplayTimeStr(revealTarget);
-
-  const [cutoffTimeLeft, setCutoffTimeLeft] = useState(() => calculateTimeLeft(cutoffTarget));
-  const [revealTimeLeft, setRevealTimeLeft] = useState(() => calculateTimeLeft(revealTarget));
+  const [cutoffTimeLeft, setCutoffTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPassed: false });
+  const [revealTimeLeft, setRevealTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPassed: false });
 
   useEffect(() => {
+    const calculateTimeLeft = (targetIso) => {
+      if (!targetIso) return { days: 0, hours: 0, minutes: 0, seconds: 0, isPassed: false };
+      const diff = new Date(targetIso).getTime() - new Date().getTime();
+      if (diff <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isPassed: true };
+      }
+      return {
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / 1000 / 60) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+        isPassed: false
+      };
+    };
+
     const timer = setInterval(() => {
-      setCutoffTimeLeft(calculateTimeLeft(cutoffTarget));
-      setRevealTimeLeft(calculateTimeLeft(revealTarget));
+      setCutoffTimeLeft(calculateTimeLeft(cutoffDate));
+      setRevealTimeLeft(calculateTimeLeft(revealDate));
     }, 1000);
+
+    setCutoffTimeLeft(calculateTimeLeft(cutoffDate));
+    setRevealTimeLeft(calculateTimeLeft(revealDate));
 
     return () => clearInterval(timer);
   }, [cutoffDate, revealDate]);
 
-  const renderTimeUnit = (value, label, colorBg, colorText, colorSubText = 'text-slate-500') => {
-    const safeValue = isNaN(value) ? 0 : value;
+  const formatDisplayTime = (isoString) => {
+    if (!isoString) return '';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return isoString;
+      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } catch {
+      return isoString;
+    }
+  };
+
+  const renderTimerDigits = (timeLeft, colorTheme = 'sky') => {
+    const digitsClass = colorTheme === 'purple' 
+      ? 'bg-purple-100 text-purple-900' 
+      : 'bg-sky-100 text-sky-900';
+
+    const lastDigitClass = colorTheme === 'purple'
+      ? 'bg-purple-600 text-white shadow-md shadow-purple-300'
+      : 'bg-sky-600 text-white shadow-md shadow-sky-300';
+
+    if (timeLeft.isPassed) {
+      return (
+        <div className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-black rounded-2xl border border-slate-200 shadow-inner">
+          已截止
+        </div>
+      );
+    }
+
     return (
-      <div className={`flex flex-col items-center justify-center p-1.5 rounded-xl ${colorBg} border border-white/60 shadow-2xs min-w-[38px]`}>
-        <span className={`text-sm font-black ${colorText} leading-none`}>
-          {String(safeValue).padStart(2, '0')}
-        </span>
-        <span className={`text-[9px] font-bold ${colorSubText} mt-0.5 leading-none`}>
-          {label}
-        </span>
+      <div className="flex items-center gap-1">
+        {/* 天 */}
+        <div className="flex flex-col items-center">
+          <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${digitsClass}`}>
+            {String(timeLeft.days).padStart(2, '0')}
+          </span>
+          <span className="text-[9px] text-slate-400 font-bold mt-0.5">天</span>
+        </div>
+        {/* 時 */}
+        <div className="flex flex-col items-center">
+          <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${digitsClass}`}>
+            {String(timeLeft.hours).padStart(2, '0')}
+          </span>
+          <span className="text-[9px] text-slate-400 font-bold mt-0.5">時</span>
+        </div>
+        {/* 分 */}
+        <div className="flex flex-col items-center">
+          <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${digitsClass}`}>
+            {String(timeLeft.minutes).padStart(2, '0')}
+          </span>
+          <span className="text-[9px] text-slate-400 font-bold mt-0.5">分</span>
+        </div>
+        {/* 秒 */}
+        <div className="flex flex-col items-center">
+          <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${lastDigitClass} animate-pulse`}>
+            {String(timeLeft.seconds).padStart(2, '0')}
+          </span>
+          <span className="text-[9px] text-slate-400 font-bold mt-0.5">秒</span>
+        </div>
       </div>
     );
   };
 
-  // 性別已揭曉模式
+  // 若已揭曉，展示最終勝利結算卡片
   if (revealedResult) {
     const isPrince = revealedResult === 'prince';
-    const winningBets = bets.filter(b => b.team === revealedResult);
+    const winningBets = bets.filter(b => b.team === (isPrince ? 'prince' : 'princess'));
 
     return (
-      <div className="w-full box-border animate-fadeIn">
-        <div className={`w-full p-4 rounded-3xl shadow-xl border-3 relative overflow-hidden box-border ${
-          isPrince
-            ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 text-white border-sky-300 shadow-sky-200'
-            : 'bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white border-pink-300 shadow-pink-200'
-        }`}>
-          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
-
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-white/20 backdrop-blur-md rounded-2xl flex-shrink-0">
-                <PartyPopper className="w-6 h-6 text-yellow-300 animate-bounce" />
-              </div>
-              <div>
-                <div className="text-[11px] text-white/90 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-                  <span>性別大揭曉成功</span>
-                </div>
-                <h3 className="text-lg font-black tracking-tight leading-tight">
-                  小元寶是【{isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝'}】！
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-2.5 rounded-2xl bg-black/15 backdrop-blur-sm border border-white/20 flex items-center justify-between mb-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <Trophy className="w-4 h-4 text-amber-300 fill-amber-300" />
-              <span className="font-bold text-white/90">猜對人數:</span>
-              <span className="font-black text-amber-200 text-sm">{winningBets.length} 人</span>
-            </div>
+      <div className="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 p-0.5 rounded-3xl shadow-xl border-2 border-yellow-200 animate-fadeIn">
+        <div className="bg-white/95 backdrop-blur-md p-4 rounded-[22px] text-center space-y-3">
+          
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-3xl animate-bounce">🎉</span>
             <div>
-              <span className="font-bold text-white/90">瓜分總獎金:</span>
-              <span className="font-black text-amber-300 text-sm ml-1">${Number(grandTotal).toLocaleString('en-US')}</span>
+              <h3 className="text-base font-extrabold text-amber-950 flex items-center justify-center gap-1">
+                <span>小元寶揭曉成功！</span>
+                <span className="px-2 py-0.5 bg-amber-500 text-white rounded-full text-xs font-black">
+                  {isPrince ? '👦 帥氣王子' : '👧 可愛公主'}
+                </span>
+              </h3>
+              <p className="text-xs text-amber-800 font-bold mt-0.5">
+                恭喜 {winningBets.length} 位幸運兒猜中得獎！
+              </p>
             </div>
+            <span className="text-3xl animate-bounce">🎉</span>
           </div>
 
-          <button
-            onClick={onReopenRevealModal}
-            className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-900 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-98 border border-white/80"
-          >
-            <Trophy className="w-4 h-4 text-amber-500 fill-amber-400" />
-            <span>🎯 命中名單</span>
-          </button>
+          {/* 重看煙火與爆竹按鈕 */}
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <button
+              onClick={onReopenRevealModal}
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-black text-xs rounded-2xl shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <PartyPopper className="w-4 h-4 text-yellow-100" />
+              <span>重看揭曉動畫 🎆</span>
+            </button>
+          </div>
 
         </div>
       </div>
     );
   }
 
-  // 尚未揭曉模式 (清晰顯示精確截止時間與揭曉時間)
   return (
     <div className="w-full space-y-2 box-border">
       
-      {/* 1. 性別揭曉時刻倒數卡片 (印出精確揭曉時間: YYYY/MM/DD HH:mm) */}
-      <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-purple-100 flex items-center justify-between gap-2 box-border">
+      {/* 1. 上方：投注截止倒數卡片 (Cutoff - 藍色) */}
+      <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-3xl shadow-lg border border-sky-100/80 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-2 bg-purple-100 text-purple-600 rounded-xl flex-shrink-0">
-            <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '4s' }} />
+          <div className="p-2 bg-sky-100 text-sky-600 rounded-2xl flex-shrink-0">
+            <Clock className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-black text-slate-800">揭曉時刻</div>
-            <div className="text-[10px] text-purple-700 font-extrabold truncate">
-              {revealTimeLeft.isPassed ? '🎉 已揭曉' : formattedRevealStr}
+            <div className="text-xs font-black text-slate-800 truncate">投注截止</div>
+            <div className="text-[10px] text-sky-700 font-bold truncate">
+              {formatDisplayTime(cutoffDate)}
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {renderTimeUnit(revealTimeLeft.days, '天', 'bg-purple-50', 'text-purple-700', 'text-slate-500')}
-          {renderTimeUnit(revealTimeLeft.hours, '時', 'bg-purple-50', 'text-purple-700', 'text-slate-500')}
-          {renderTimeUnit(revealTimeLeft.minutes, '分', 'bg-purple-50', 'text-purple-700', 'text-slate-500')}
-          {renderTimeUnit(revealTimeLeft.seconds, '秒', 'bg-purple-600', 'text-white', 'text-white/90')}
+        <div className="flex-shrink-0">
+          {renderTimerDigits(cutoffTimeLeft, 'sky')}
         </div>
       </div>
 
-      {/* 2. 下注截止時刻倒數卡片 (印出精確截止時間: YYYY/MM/DD HH:mm) */}
-      <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-sky-100 flex items-center justify-between gap-2 box-border">
+      {/* 2. 下方：揭曉時刻倒數卡片 (Reveal - 紫金) */}
+      <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-3xl shadow-lg border border-purple-100/80 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-2 bg-sky-100 text-sky-600 rounded-xl flex-shrink-0 relative overflow-hidden">
-            <Clock className="w-4 h-4 animate-spin" style={{ animationDuration: '10s' }} />
+          <div className="p-2 bg-purple-100 text-purple-600 rounded-2xl flex-shrink-0">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-black text-slate-800">投注截止</div>
-            <div className="text-[10px] text-sky-700 font-extrabold truncate">
-              {cutoffTimeLeft.isPassed ? '⏰ 投注已截止' : formattedCutoffStr}
+            <div className="text-xs font-black text-slate-800 truncate">揭曉時刻</div>
+            <div className="text-[10px] text-purple-700 font-bold truncate">
+              {formatDisplayTime(revealDate)}
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {renderTimeUnit(cutoffTimeLeft.days, '天', 'bg-sky-50', 'text-sky-700', 'text-slate-500')}
-          {renderTimeUnit(cutoffTimeLeft.hours, '時', 'bg-sky-50', 'text-sky-700', 'text-slate-500')}
-          {renderTimeUnit(cutoffTimeLeft.minutes, '分', 'bg-sky-50', 'text-sky-700', 'text-slate-500')}
-          {renderTimeUnit(cutoffTimeLeft.seconds, '秒', 'bg-sky-600', 'text-white', 'text-white/90')}
+        <div className="flex-shrink-0">
+          {renderTimerDigits(revealTimeLeft, 'purple')}
         </div>
       </div>
 
