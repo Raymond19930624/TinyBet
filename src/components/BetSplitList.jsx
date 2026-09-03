@@ -143,9 +143,9 @@ export default function BetSplitList({
       <div className="w-full box-border">
         <div className="w-full bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white box-border">
           
-          {/* 區塊標題 (標題右側展示「下注後請洽【元寶媽】付款與確認！」走動字幕/提示) */}
-          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between gap-2 overflow-hidden">
-            <h2 className="text-sm font-black text-slate-800 flex-shrink-0">
+          {/* 區塊標題 (自然寬度緊湊膠囊包覆，徹底消除右側多餘空白) */}
+          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between gap-1.5 box-border">
+            <h2 className="text-[13px] font-black text-slate-800 flex-shrink-0">
               全場即時對決動態牆
             </h2>
 
@@ -156,15 +156,15 @@ export default function BetSplitList({
                   : 'bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white'
               }`}>
                 <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-200" />
-                <span>揭曉：{revealedResult === 'prince' ? '👦 王子隊勝出' : '👧 公主隊勝出'}！</span>
+                <span>揭曉：{revealedResult === 'prince' ? '👦 王子勝出' : '👧 公主勝出'}！</span>
               </div>
             ) : (
-              /* 動態走動跑馬字幕: 下注後請洽【元寶媽】付款與確認！ */
-              <div className="flex-1 min-w-0 bg-amber-50 border border-amber-200/90 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-xs overflow-hidden">
-                <Megaphone className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 animate-bounce" />
-                <div className="text-[11px] font-black text-amber-900 truncate tracking-tight">
+              /* 自然寬度緊湊包覆 inline-flex，消除右側多餘空白 */
+              <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/90 rounded-full px-2 py-0.5 shadow-2xs flex-shrink-0">
+                <Megaphone className="w-3 h-3 text-amber-600 flex-shrink-0 animate-bounce" />
+                <span className="text-[10px] font-black text-amber-900 tracking-tight whitespace-nowrap">
                   下注後請洽【元寶媽】付款與確認！
-                </div>
+                </span>
               </div>
             )}
           </div>
