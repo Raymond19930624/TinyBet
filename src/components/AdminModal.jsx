@@ -211,36 +211,6 @@ export default function AdminModal({
             /* 已登入控制面板 */
             <div className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-4">
               
-              {/* 🧪 測試專區：即時推播與煙火觸發測試按鈕 */}
-              <div className="p-3 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border-2 border-indigo-200 shadow-xs space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-black text-indigo-900">
-                  <Sparkles className="w-4 h-4 text-purple-600 animate-spin" />
-                  <span>🧪 派對功能測試專區</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      if (onTestPushNotification) onTestPushNotification();
-                    }}
-                    className="py-2 px-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1 active:scale-95"
-                  >
-                    <BellRing className="w-3.5 h-3.5 text-yellow-300" />
-                    <span>測試即時推播</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      onClose();
-                      if (onTestRevealEffect) onTestRevealEffect();
-                    }}
-                    className="py-2 px-2.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-black text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1 active:scale-95"
-                  >
-                    <PartyPopper className="w-3.5 h-3.5 text-yellow-200" />
-                    <span>測試揭曉煙火</span>
-                  </button>
-                </div>
-              </div>
-
               {/* 1. 時間管理區 */}
               <div className="space-y-2">
                 {/* 1-1 下注截止時間 */}
