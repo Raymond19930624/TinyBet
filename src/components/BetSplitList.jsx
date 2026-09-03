@@ -54,9 +54,9 @@ export default function BetSplitList({
         key={bet.id}
         className={`w-full p-3.5 rounded-2xl transition-all relative box-border ${
           isWinningTeam
-            ? 'bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 border-3 border-amber-500 shadow-md ring-2 ring-amber-300 scale-[1.01]'
+            ? 'bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 border-2 border-amber-400 shadow-md shadow-amber-200/50'
             : isMine
-            ? 'bg-gradient-to-r from-amber-50/80 via-white to-amber-50/80 border-3 border-amber-600/90 shadow-md shadow-amber-100 ring-3 ring-amber-300/70 scale-[1.01]'
+            ? 'bg-gradient-to-r from-amber-50/80 via-white to-amber-50/80 border-2 border-amber-500 shadow-md shadow-amber-100'
             : isPrince
             ? 'bg-sky-50/70 border-2 border-sky-200'
             : 'bg-pink-50/70 border-2 border-pink-200'
@@ -168,15 +168,15 @@ export default function BetSplitList({
             )}
           </div>
 
-          {/* 雙 Tab 切換按鈕 */}
+          {/* 雙 Tab 切換按鈕 (移除 scale-[1.01] 避免邊界切角) */}
           <div className="grid grid-cols-2 gap-2 mb-3 w-full">
             <button
               onClick={() => setActiveTab('prince')}
               className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 relative box-border ${
                 revealedResult === 'prince'
-                  ? 'bg-sky-500 text-white border-amber-400 shadow-md shadow-sky-200 scale-[1.01]'
+                  ? 'bg-sky-500 text-white border-amber-400 shadow-md shadow-sky-200'
                   : activeTab === 'prince'
-                  ? 'bg-sky-500 text-white border-sky-600 shadow-md shadow-sky-200 scale-[1.01]'
+                  ? 'bg-sky-500 text-white border-sky-600 shadow-md shadow-sky-200'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50'
               }`}
             >
@@ -193,9 +193,9 @@ export default function BetSplitList({
               onClick={() => setActiveTab('princess')}
               className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 relative box-border ${
                 revealedResult === 'princess'
-                  ? 'bg-pink-500 text-white border-amber-400 shadow-md shadow-pink-200 scale-[1.01]'
+                  ? 'bg-pink-500 text-white border-amber-400 shadow-md shadow-pink-200'
                   : activeTab === 'princess'
-                  ? 'bg-pink-500 text-white border-pink-600 shadow-md shadow-pink-200 scale-[1.01]'
+                  ? 'bg-pink-500 text-white border-pink-600 shadow-md shadow-pink-200'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-pink-50'
               }`}
             >
@@ -209,17 +209,17 @@ export default function BetSplitList({
             </button>
           </div>
 
-          {/* 名單內容卡片 */}
+          {/* 名單內容卡片 (預留 p-3.5 緩衝留白，100% 不遮蓋外框) */}
           <div className="w-full">
             {/* 王子隊名單 */}
             {activeTab === 'prince' && (
-              <div className="w-full bg-sky-50/50 p-3 rounded-2xl border-2 border-sky-100 box-border animate-fadeIn">
+              <div className="w-full bg-sky-50/50 p-3.5 rounded-2xl border-2 border-sky-100 box-border animate-fadeIn">
                 {princeBets.length === 0 ? (
                   <div className="w-full py-8 text-center text-sky-400 text-xs font-medium border-2 border-dashed border-sky-200/80 rounded-2xl">
                     {revealedResult ? '王子隊目前尚無下注紀錄' : '目前尚無人挺王子隊，快點下注按鈕搶先下注！'}
                   </div>
                 ) : (
-                  <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto no-scrollbar">
+                  <div className="w-full space-y-3 max-h-[420px] overflow-y-auto no-scrollbar p-1 box-border">
                     {princeBets.map(b => renderBetCard(b, true))}
                   </div>
                 )}
@@ -228,13 +228,13 @@ export default function BetSplitList({
 
             {/* 公主隊名單 */}
             {activeTab === 'princess' && (
-              <div className="w-full bg-pink-50/50 p-3 rounded-2xl border-2 border-pink-100 box-border animate-fadeIn">
+              <div className="w-full bg-pink-50/50 p-3.5 rounded-2xl border-2 border-pink-100 box-border animate-fadeIn">
                 {princessBets.length === 0 ? (
                   <div className="w-full py-8 text-center text-pink-400 text-xs font-medium border-2 border-dashed border-pink-200/80 rounded-2xl">
                     {revealedResult ? '公主隊目前尚無下注紀錄' : '目前尚無人挺公主隊，快點下注按鈕搶先下注！'}
                   </div>
                 ) : (
-                  <div className="w-full space-y-2.5 max-h-[420px] overflow-y-auto no-scrollbar">
+                  <div className="w-full space-y-3 max-h-[420px] overflow-y-auto no-scrollbar p-1 box-border">
                     {princessBets.map(b => renderBetCard(b, false))}
                   </div>
                 )}
