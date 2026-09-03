@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Sparkles, Trophy, Play, PartyPopper } from 'lucide-react';
+import { Clock, Sparkles, Trophy, Play, PartyPopper, Calendar } from 'lucide-react';
 
 export default function Countdown({
   cutoffDate,
@@ -22,6 +22,19 @@ export default function Countdown({
     }
   };
 
+  const formatDisplayTimeStr = (targetDate) => {
+    try {
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetDate.getDate()).padStart(2, '0');
+      const hours = String(targetDate.getHours()).padStart(2, '0');
+      const minutes = String(targetDate.getMinutes()).padStart(2, '0');
+      return `${year}/${month}/${day} ${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
+
   const calculateTimeLeft = (targetDate) => {
     const difference = targetDate.getTime() - new Date().getTime();
     if (difference <= 0) {
@@ -39,6 +52,9 @@ export default function Countdown({
 
   const cutoffTarget = parseSafeDate(cutoffDate, '2026-09-05T17:00:00+08:00');
   const revealTarget = parseSafeDate(revealDate, '2026-09-05T17:30:00+08:00');
+
+  const formattedCutoffStr = formatDisplayTimeStr(cutoffTarget);
+  const formattedRevealStr = formatDisplayTimeStr(revealTarget);
 
   const [cutoffTimeLeft, setCutoffTimeLeft] = useState(() => calculateTimeLeft(cutoffTarget));
   const [revealTimeLeft, setRevealTimeLeft] = useState(() => calculateTimeLeft(revealTarget));
@@ -109,7 +125,6 @@ export default function Countdown({
             </div>
           </div>
 
-          {/* 按鈕修飾為：🎯 命中名單 */}
           <button
             onClick={onReopenRevealModal}
             className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-900 font-black text-sm rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-98 border border-white/80"
@@ -123,20 +138,20 @@ export default function Countdown({
     );
   }
 
-  // 尚未揭曉模式
+  // 尚未揭曉模式 (清晰顯示精確截止時間與揭曉時間)
   return (
     <div className="w-full space-y-2 box-border">
       
-      {/* 1. 性別揭曉時刻倒數卡片 */}
+      {/* 1. 性別揭曉時刻倒數卡片 (印出精確揭曉時間: YYYY/MM/DD HH:mm) */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-purple-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-2 bg-purple-100 text-purple-600 rounded-xl flex-shrink-0">
             <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '4s' }} />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-xs font-black text-slate-800">揭曉時刻</div>
-            <div className="text-[10px] text-purple-600 font-bold">
-              {revealTimeLeft.isPassed ? '🎉 已到揭曉時間！' : '派對現場揭曉倒數'}
+            <div className="text-[10px] text-purple-700 font-extrabold truncate">
+              {revealTimeLeft.isPassed ? '🎉 已揭曉' : formattedRevealStr}
             </div>
           </div>
         </div>
@@ -149,16 +164,16 @@ export default function Countdown({
         </div>
       </div>
 
-      {/* 2. 下注截止時刻倒數卡片 */}
+      {/* 2. 下注截止時刻倒數卡片 (印出精確截止時間: YYYY/MM/DD HH:mm) */}
       <div className="w-full bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-md border-2 border-sky-100 flex items-center justify-between gap-2 box-border">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-2 bg-sky-100 text-sky-600 rounded-xl flex-shrink-0 relative overflow-hidden">
             <Clock className="w-4 h-4 animate-spin" style={{ animationDuration: '10s' }} />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-xs font-black text-slate-800">投注截止</div>
-            <div className="text-[10px] text-sky-600 font-bold">
-              {cutoffTimeLeft.isPassed ? '⏰ 投注已截止' : '下注倒數中'}
+            <div className="text-[10px] text-sky-700 font-extrabold truncate">
+              {cutoffTimeLeft.isPassed ? '⏰ 投注已截止' : formattedCutoffStr}
             </div>
           </div>
         </div>
