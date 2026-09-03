@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles } from 'lucide-react';
 import { exportBetsToCsv } from '../lib/exportCsv';
 import ToastModal from './ToastModal';
 
@@ -11,6 +11,7 @@ export default function AdminModal({
   onTogglePayment,
   onDeleteBet,
   onSetCutoff,
+  onSetRevealDate,
   onSetReveal,
   onResetAll
 }) {
@@ -19,9 +20,9 @@ export default function AdminModal({
   const [passwordError, setPasswordError] = useState('');
   const [easterEggDialog, setEasterEggDialog] = useState(false);
 
-  // 時間選擇器折疊狀態
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [tempCutoff, setTempCutoff] = useState('');
+  // 時間選擇器浮窗 (模式: 'cutoff' | 'reveal' | null)
+  const [pickerMode, setPickerMode] = useState(null);
+  const [tempDate, setTempDate] = useState('');
 
   // 多重防呆重置 Modal 狀態
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function AdminModal({
     }
   };
 
-  const handleSetCutoffShortcut = (shortcutType) => {
+  const handleSetShortcut = (shortcutType) => {
     let dateStr = '';
     if (shortcutType === '5_1700') {
       dateStr = '2026-09-05T17:00:00+08:00';
@@ -54,28 +55,29 @@ export default function AdminModal({
     }
 
     if (dateStr) {
-      onSetCutoff(dateStr, password);
-      setIsPickerOpen(false);
-      setToast({
-        isOpen: true,
-        title: '時間已更新',
-        message: `截止時間已成功調整！`,
-        type: 'success'
-      });
+      if (pickerMode === 'cutoff') {
+        onSetCutoff(dateStr, password);
+        setToast({ isOpen: true, title: '時間已更新', message: '下注截止時間已成功調整！', type: 'success' });
+      } else if (pickerMode === 'reveal') {
+        onSetRevealDate(dateStr, password);
+        setToast({ isOpen: true, title: '時間已更新', message: '性別揭曉時間已成功調整！', type: 'success' });
+      }
+      setPickerMode(null);
     }
   };
 
-  const handleSetCustomCutoff = () => {
-    if (!tempCutoff) return;
-    const formatted = new Date(tempCutoff).toISOString();
-    onSetCutoff(formatted, password);
-    setIsPickerOpen(false);
-    setToast({
-      isOpen: true,
-      title: '時間已更新',
-      message: '自訂截止時間已成功更新！',
-      type: 'success'
-    });
+  const handleSetCustomDate = () => {
+    if (!tempDate) return;
+    const formatted = new Date(tempDate).toISOString();
+
+    if (pickerMode === 'cutoff') {
+      onSetCutoff(formatted, password);
+      setToast({ isOpen: true, title: '時間已更新', message: '自訂截止時間已成功更新！', type: 'success' });
+    } else if (pickerMode === 'reveal') {
+      onSetRevealDate(formatted, password);
+      setToast({ isOpen: true, title: '時間已更新', message: '自訂揭曉時間已成功更新！', type: 'success' });
+    }
+    setPickerMode(null);
   };
 
   const handleExportCsv = () => {
@@ -188,22 +190,42 @@ export default function AdminModal({
             </form>
           ) : (
             /* 已登入控制面板 */
-            <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+            <div className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-4">
               
-              {/* 1. 下注截止時間 (預設折疊卡片) */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                    <Calendar className="w-4 h-4 text-indigo-500" />
-                    <span>截止時間:</span>
-                    <span className="font-black text-slate-900">{formatDisplayTime(config.cutoffDate)}</span>
+              {/* 1. 時間管理區 (下注截止時間 & 性別揭曉時間) */}
+              <div className="space-y-2">
+                {/* 1-1 下注截止時間 */}
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                      <Calendar className="w-4 h-4 text-indigo-500" />
+                      <span>下注截止時間:</span>
+                      <span className="font-black text-slate-900">{formatDisplayTime(config.cutoffDate)}</span>
+                    </div>
+                    <button
+                      onClick={() => setPickerMode('cutoff')}
+                      className="px-2.5 py-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black rounded-xl transition-all shadow-xs"
+                    >
+                      調整截止時間
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setIsPickerOpen(true)}
-                    className="px-2.5 py-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black rounded-xl transition-all shadow-xs"
-                  >
-                    調整時間
-                  </button>
+                </div>
+
+                {/* 1-2 性別揭曉時間 */}
+                <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/80">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900">
+                      <Sparkles className="w-4 h-4 text-purple-600" />
+                      <span>性別揭曉時間:</span>
+                      <span className="font-black text-purple-950">{formatDisplayTime(config.revealDate)}</span>
+                    </div>
+                    <button
+                      onClick={() => setPickerMode('reveal')}
+                      className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-xl transition-all shadow-xs"
+                    >
+                      調整揭曉時間
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -259,7 +281,7 @@ export default function AdminModal({
                     目前尚無下注資料
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar pr-1">
                     {bets.map((bet) => (
                       <div
                         key={bet.id}
@@ -322,12 +344,12 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 獨立跳出式「調整時間浮窗 (CutoffPickerModal)」 */}
-      {isPickerOpen && (
+      {/* 獨立跳出式「時間選擇器浮窗 (DatePickerModal)」 */}
+      {pickerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
             <button
-              onClick={() => setIsPickerOpen(false)}
+              onClick={() => setPickerMode(null)}
               className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all"
             >
               <X className="w-5 h-5" />
@@ -335,23 +357,25 @@ export default function AdminModal({
 
             <h3 className="text-base font-extrabold text-slate-800 mb-1 flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-indigo-500" />
-              <span>調整下注截止時間</span>
+              <span>{pickerMode === 'cutoff' ? '調整下注截止時間' : '調整性別揭曉時間'}</span>
             </h3>
-            <p className="text-xs text-slate-500 mb-4">設定後時間一到自動停止下注</p>
+            <p className="text-xs text-slate-500 mb-4">
+              {pickerMode === 'cutoff' ? '設定後時間一到自動停止下注' : '設定性別趴現場的公佈揭曉時間'}
+            </p>
 
             {/* 快捷點擊 */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               <button
-                onClick={() => handleSetCutoffShortcut('5_1700')}
+                onClick={() => handleSetShortcut('5_1700')}
                 className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-extrabold text-xs rounded-2xl transition-all text-center"
               >
-                9/5 17:00 截止
+                9/5 17:00
               </button>
               <button
-                onClick={() => handleSetCutoffShortcut('5_1730')}
+                onClick={() => handleSetShortcut('5_1730')}
                 className="py-2.5 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-extrabold text-xs rounded-2xl transition-all text-center"
               >
-                9/5 17:30 截止
+                9/5 17:30
               </button>
             </div>
 
@@ -360,15 +384,15 @@ export default function AdminModal({
               <label className="block text-xs font-black text-slate-700">自訂精確時間:</label>
               <input
                 type="datetime-local"
-                value={tempCutoff}
-                onChange={(e) => setTempCutoff(e.target.value)}
+                value={tempDate}
+                onChange={(e) => setTempDate(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
               />
               <button
-                onClick={handleSetCustomCutoff}
+                onClick={handleSetCustomDate}
                 className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-2xl shadow-md transition-all"
               >
-                確認更新自訂時間
+                確認更新時間
               </button>
             </div>
           </div>

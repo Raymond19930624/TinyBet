@@ -208,6 +208,18 @@ export function useGenderBetStore() {
     return true;
   };
 
+  const adminSetRevealDate = (revealDate, password) => {
+    if (password !== '17218') return false;
+
+    if (isConnected && socket) {
+      socket.emit('adminSetRevealDate', { revealDate, password });
+    } else {
+      const nextConfig = { ...data.config, revealDate };
+      updateLocalState({ ...data, config: nextConfig });
+    }
+    return true;
+  };
+
   const adminSetReveal = (result, password) => {
     if (password !== '17218') return false;
 
@@ -274,6 +286,7 @@ export function useGenderBetStore() {
     adminTogglePayment,
     adminDeleteBet,
     adminSetCutoff,
+    adminSetRevealDate,
     adminSetReveal,
     adminResetAll
   };

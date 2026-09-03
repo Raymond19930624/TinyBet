@@ -87,8 +87,8 @@ export default function App() {
         config={store.config}
         onTogglePayment={store.adminTogglePayment}
         onDeleteBet={store.adminDeleteBet}
-
         onSetCutoff={store.adminSetCutoff}
+        onSetRevealDate={store.adminSetRevealDate}
         onSetReveal={store.adminSetReveal}
         onResetAll={store.adminResetAll}
       />

@@ -102,6 +102,13 @@ io.on('connection', (socket) => {
     io.emit('stateUpdate', currentState);
   });
 
+  socket.on('adminSetRevealDate', ({ revealDate, password }) => {
+    if (password !== '17218') return;
+    currentState.config.revealDate = revealDate;
+    saveState(currentState);
+    io.emit('stateUpdate', currentState);
+  });
+
   socket.on('adminSetReveal', ({ result, password }) => {
     if (password !== '17218') return;
     currentState.config.revealedResult = result;
