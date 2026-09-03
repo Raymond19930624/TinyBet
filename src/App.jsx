@@ -22,7 +22,7 @@ export default function App() {
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
 
-  // 1. 自動註冊 Service Worker (Android Chrome 相容)
+  // 1. 自動註冊 Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -49,7 +49,6 @@ export default function App() {
     }
   };
 
-  // 兼容 Android Chrome 與桌面端的原生推播函式
   const sendNativeNotification = (title, options) => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
@@ -115,9 +114,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 transition-all ${
-      isLocked ? 'pb-6' : 'pb-24'
-    }`}>
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 pb-6 box-border">
       
       {/* 手機優先最大寬度卡片容器 */}
       <main className="w-full max-w-md mx-auto px-3 space-y-3.5 box-border">
@@ -177,6 +174,11 @@ export default function App() {
           revealedResult={store.config.revealedResult}
           onCancelBet={store.cancelBet}
         />
+
+        {/* 頁尾版權小字 (緊貼動態牆底部，消除下方過大留白) */}
+        <footer className="text-center pt-2 pb-1 text-[11px] text-slate-600 font-semibold">
+          小元寶性別趴特別企劃 💕 祝大家玩的開心猜得準確！
+        </footer>
       </main>
 
       {/* 浮動下注按鈕 (右下角 Floating Button) */}
@@ -236,11 +238,6 @@ export default function App() {
         confirmText="好的，去找元寶媽 💖"
         onClose={() => setSuccessToast(prev => ({ ...prev, isOpen: false }))}
       />
-
-      {/* 頁尾版權小字 */}
-      <footer className="text-center mt-6 text-[11px] text-slate-600 font-semibold">
-        小元寶性別趴特別企劃 💕 祝大家玩的開心猜得準確！
-      </footer>
 
     </div>
   );
