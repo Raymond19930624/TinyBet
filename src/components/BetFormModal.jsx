@@ -79,32 +79,32 @@ export default function BetFormModal({
       note
     });
 
-    // 2. 清空欄位並【立刻關閉表單 Modal】不留在原本畫面！
+    // 2. 清空欄位並【立刻關閉表單 Modal】
     setNote('');
     onClose();
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
-        <div className="bg-white rounded-3xl max-w-md w-full p-4 shadow-2xl border-2 border-white relative max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+        <div className="bg-white rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl border-2 border-white relative max-h-[92vh] flex flex-col overflow-hidden box-border">
           
           {/* 關閉按鈕 */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all"
+            className="absolute top-3.5 right-3.5 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all z-10"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* 標題 */}
-          <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-slate-100">
-            <div className="p-2 bg-gradient-to-tr from-pink-400 to-purple-500 text-white rounded-2xl shadow-md">
+          <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-slate-100 pr-8">
+            <div className="p-2 bg-gradient-to-tr from-pink-400 to-purple-500 text-white rounded-2xl shadow-md flex-shrink-0">
               <HeartHandshake className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-lg font-extrabold text-slate-800">下注猜猜看 🎲</h2>
-              <p className="text-xs text-slate-500">100為一單位 ‧ 點加減按鈕調整金額</p>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-800 truncate">下注猜猜看 🎲</h2>
+              <p className="text-[11px] text-slate-500 truncate">100為一單位 ‧ 點加減按鈕調整金額</p>
             </div>
           </div>
 
@@ -125,7 +125,7 @@ export default function BetFormModal({
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-3">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto no-scrollbar pr-0.5 space-y-3 box-border">
               
               {/* 1. 選擇陣容 */}
               <div>
@@ -182,7 +182,7 @@ export default function BetFormModal({
                     placeholder="請輸入您的姓名或暱稱"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-2xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-slate-800 font-semibold text-xs transition-all"
+                    className="w-full pl-9 pr-3 py-2 rounded-2xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-slate-800 font-semibold text-xs transition-all box-border"
                   />
                 </div>
                 <p className="text-[10px] text-purple-600 font-bold flex items-center gap-1 pl-1">
@@ -191,22 +191,22 @@ export default function BetFormModal({
                 </p>
               </div>
 
-              {/* 3. 金額選擇 */}
+              {/* 3. 金額選擇 (100% 防裁切) */}
               <div>
                 <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
                   3. 下注金額 <span className="text-pink-500">*</span>
                 </label>
 
-                {/* 快捷金額 */}
-                <div className="grid grid-cols-5 gap-1 mb-2 w-full">
+                {/* 快捷金額 (5等分絕對防裁切) */}
+                <div className="grid grid-cols-5 gap-1 mb-2 w-full box-border px-0.5">
                   {quickAmounts.map((amt) => (
                     <button
                       key={amt}
                       type="button"
                       onClick={() => setAmount(amt)}
-                      className={`py-1.5 px-0.5 rounded-xl text-[11px] font-extrabold transition-all border text-center ${
+                      className={`py-1.5 px-0 rounded-xl text-[10px] sm:text-[11px] font-black transition-all border text-center box-border overflow-hidden whitespace-nowrap ${
                         amount === amt
-                          ? 'bg-slate-800 text-white border-slate-900 shadow scale-105'
+                          ? 'bg-slate-800 text-white border-slate-900 shadow'
                           : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
                       }`}
                     >
@@ -216,7 +216,7 @@ export default function BetFormModal({
                 </div>
 
                 {/* + / - 按鈕 */}
-                <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 border-2 border-slate-200">
+                <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 border-2 border-slate-200 box-border">
                   <button
                     type="button"
                     onClick={handleDecrease}
@@ -249,7 +249,7 @@ export default function BetFormModal({
               </div>
 
               {/* ⚡ 預估獲勝彩金 */}
-              <div className="p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-200/80 shadow-xs flex items-center justify-between gap-2">
+              <div className="p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-200/80 shadow-xs flex items-center justify-between gap-2 box-border">
                 <div className="min-w-0">
                   <div className="text-xs font-black text-amber-900 flex items-center gap-1 truncate">
                     <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-400 flex-shrink-0" />
@@ -279,7 +279,7 @@ export default function BetFormModal({
                     placeholder="寫下一句給小元寶的溫馨祝福吧 (選填)..."
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-2xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-slate-800 text-xs transition-all"
+                    className="w-full pl-9 pr-3 py-2 rounded-2xl border border-slate-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none text-slate-800 text-xs transition-all box-border"
                   />
                 </div>
               </div>
@@ -287,7 +287,7 @@ export default function BetFormModal({
               {/* 送出按鈕 */}
               <button
                 type="submit"
-                className={`w-full py-2.5 px-4 rounded-2xl font-black text-sm text-white shadow-lg transition-all flex items-center justify-center gap-1.5 active:scale-98 ${
+                className={`w-full py-2.5 px-4 rounded-2xl font-black text-sm text-white shadow-lg transition-all flex items-center justify-center gap-1.5 active:scale-98 box-border ${
                   team === 'prince'
                     ? 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-sky-200'
                     : 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 shadow-pink-200'
