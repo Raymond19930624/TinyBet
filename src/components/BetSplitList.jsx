@@ -143,7 +143,7 @@ export default function BetSplitList({
       <div className="w-full box-border">
         <div className="w-full bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white box-border">
           
-          {/* 區塊標題 (自然寬度緊湊膠囊包覆，徹底消除右側多餘空白) */}
+          {/* 區塊標題 (自然寬度緊湊膠囊包覆: 下注後請洽【元寶媽】確認付款完成喔！) */}
           <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between gap-1.5 box-border">
             <h2 className="text-[13px] font-black text-slate-800 flex-shrink-0">
               全場即時對決動態牆
@@ -159,11 +159,11 @@ export default function BetSplitList({
                 <span>揭曉：{revealedResult === 'prince' ? '👦 王子勝出' : '👧 公主勝出'}！</span>
               </div>
             ) : (
-              /* 自然寬度緊湊包覆 inline-flex，消除右側多餘空白 */
+              /* 自然寬度緊湊包覆 inline-flex */
               <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/90 rounded-full px-2 py-0.5 shadow-2xs flex-shrink-0">
                 <Megaphone className="w-3 h-3 text-amber-600 flex-shrink-0 animate-bounce" />
                 <span className="text-[10px] font-black text-amber-900 tracking-tight whitespace-nowrap">
-                  下注後請洽【元寶媽】付款與確認！
+                  下注後請洽【元寶媽】確認付款完成喔！
                 </span>
               </div>
             )}

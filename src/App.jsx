@@ -126,12 +126,12 @@ export default function App() {
         />
       )}
 
-      {/* 🌟 下注成功專屬『請洽元寶媽付款』提示 ToastModal */}
+      {/* 🌟 下注成功專屬『請記得洽【元寶媽】確認付款完成喔！』提示 ToastModal */}
       <ToastModal
         isOpen={successToast.isOpen}
         type="success"
         title="🎉 下注成功！"
-        message={`太棒了！您已成功預測【${successToast.teamName}】$${Number(successToast.amount).toLocaleString('en-US')}！\n\n👩🏻‍🍼 請記得【洽元寶媽】付款與確認完成喔！`}
+        message={`太棒了！您已成功預測【${successToast.teamName}】$${Number(successToast.amount).toLocaleString('en-US')}！\n\n👩🏻‍🍼 請記得洽【元寶媽】確認付款完成喔！`}
         confirmText="好的，去找元寶媽 💖"
         onClose={() => setSuccessToast(prev => ({ ...prev, isOpen: false }))}
       />
