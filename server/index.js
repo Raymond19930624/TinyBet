@@ -20,18 +20,47 @@ const io = new Server(httpServer, {
 
 const CLOUD_STORAGE_URL = 'https://api.restful-api.dev/objects/ff808181a0662e5201a0663b9da7000c';
 
+const defaultBets = [
+  {
+    id: 'bet_1788427853888_l0jzt',
+    name: '王奕惟元寶爸',
+    team: 'prince',
+    amount: 500,
+    note: '最好大家都選女的，我一人獨得😆😆😆',
+    isPaid: false,
+    createdAt: '2026-09-03T09:30:53.888Z'
+  },
+  {
+    id: 'bet_1788426928000_jhy02',
+    name: '佳慧姨',
+    team: 'princess',
+    amount: 600,
+    note: '小元寶，乖乖健康長大！王子公主阿姨都愛❤️',
+    isPaid: true,
+    createdAt: '2026-09-03T09:15:28.000Z'
+  },
+  {
+    id: 'bet_1788426779000_ypm01',
+    name: '林以平元寶媽',
+    team: 'princess',
+    amount: 500,
+    note: '元寶乖乖～希望你健康長大我們一起欺負爸爸',
+    isPaid: true,
+    createdAt: '2026-09-03T09:12:59.000Z'
+  },
+  {
+    id: 'bet_1788425403650_9tlm7',
+    name: '林佳瑩',
+    team: 'princess',
+    amount: 600,
+    note: '無條件支持公主🤩',
+    isPaid: true,
+    createdAt: '2026-09-03T08:50:03.650Z'
+  }
+];
+
 const defaultState = {
-  bets: [
-    {
-      id: "bet_1788425403650_9tlm7",
-      name: "林佳瑩",
-      team: "princess",
-      amount: 600,
-      note: "無條件支持公主🤩",
-      isPaid: false,
-      createdAt: "2026-09-03T08:50:03.650Z"
-    }
-  ],
+  bets: defaultBets,
   config: {
     cutoffDate: '2026-09-05T17:00:00+08:00',
     revealDate: '2026-09-05T17:30:00+08:00',
@@ -50,15 +79,34 @@ function normalizeBetTeam(bet) {
   return bet;
 }
 
-// 雲端唯一權威數據庫 (Cloud Single Source of Truth)
+function deduplicateBets(betsArray) {
+  if (!Array.isArray(betsArray)) return [];
+  const seenIds = new Set();
+  const seenKeys = new Set();
+  const result = [];
+
+  for (const b of betsArray) {
+    if (!b || !b.id) continue;
+    const cleanBet = normalizeBetTeam(b);
+    const key = `${cleanBet.name.trim()}_${cleanBet.team}_${cleanBet.amount}`;
+
+    if (!seenIds.has(cleanBet.id) && !seenKeys.has(key)) {
+      seenIds.add(cleanBet.id);
+      seenKeys.add(key);
+      result.push(cleanBet);
+    }
+  }
+  return result;
+}
+
+// 雲端數據庫讀取與去重防護
 async function fetchStateFromCloud() {
   try {
     const response = await fetch(CLOUD_STORAGE_URL);
     if (response.ok) {
       const json = await response.json();
       if (json && json.data && Array.isArray(json.data.bets) && json.data.bets.length > 0) {
-        json.data.bets = json.data.bets.map(normalizeBetTeam);
-        console.log(`Successfully fetched ${json.data.bets.length} bets from cloud authoritative storage!`);
+        json.data.bets = deduplicateBets(json.data.bets);
         return json.data;
       }
     }
@@ -96,29 +144,32 @@ if (fs.existsSync(distPath)) {
 }
 
 const persistAndBroadcast = (state) => {
+  state.bets = deduplicateBets(state.bets);
   syncStateToCloud(state);
   io.emit('stateUpdate', state);
 };
 
-// 🌟 核心：開機完成雲端數據加載後，才全自動開啟 Socket 連線監聽
+// 伺服器啟動邏輯
 async function startServer() {
   const cloudData = await fetchStateFromCloud();
   if (cloudData && Array.isArray(cloudData.bets) && cloudData.bets.length > 0) {
-    currentState = cloudData;
-    console.log(`Server initialized with ${currentState.bets.length} cloud bets!`);
+    currentState = {
+      ...cloudData,
+      bets: deduplicateBets(cloudData.bets)
+    };
   } else {
-    // 若雲端為空，確保林佳瑩保底寫入雲端
+    currentState = defaultState;
     syncStateToCloud(currentState);
   }
 
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
-    currentState.bets = currentState.bets.map(normalizeBetTeam);
+    currentState.bets = deduplicateBets(currentState.bets);
     socket.emit('stateUpdate', currentState);
 
     socket.on('addBet', (newBet) => {
       const cleanBet = normalizeBetTeam(newBet);
-      currentState.bets = [cleanBet, ...currentState.bets];
+      currentState.bets = deduplicateBets([cleanBet, ...currentState.bets]);
       persistAndBroadcast(currentState);
     });
 
