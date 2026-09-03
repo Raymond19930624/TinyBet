@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Key, X, Download, Trash2, Clock, Award, Check, Square, AlertTriangle, Laugh, CalendarCheck, Zap, Edit3 } from 'lucide-react';
+import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, AlertCircle } from 'lucide-react';
 import { exportBetsToCsv } from '../lib/exportCsv';
 import ToastModal from './ToastModal';
 
@@ -11,462 +11,309 @@ export default function AdminModal({
   onTogglePayment,
   onDeleteBet,
   onSetCutoff,
-  onSetReveal
+  onSetReveal,
+  onResetAll
 }) {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [showTrollModal, setShowTrollModal] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [easterEggDialog, setEasterEggDialog] = useState(false);
 
-  const [isCutoffPickerOpen, setIsCutoffPickerOpen] = useState(false);
+  // 時間選擇器折疊狀態
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [tempCutoff, setTempCutoff] = useState('');
 
-  const [modalDialog, setModalDialog] = useState({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-    confirmText: '確認',
-    onConfirmAction: null
-  });
+  // 多重防呆重置 Modal 狀態
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetConfirmInput, setResetConfirmInput] = useState('');
 
-  const [cutoffDate, setCutoffDate] = useState(() => {
-    if (config?.cutoffDate) {
-      const d = new Date(config.cutoffDate);
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    }
-    return '2026-09-05';
-  });
-
-  const [cutoffHour, setCutoffHour] = useState(() => {
-    if (config?.cutoffDate) {
-      const d = new Date(config.cutoffDate);
-      return String(d.getHours()).padStart(2, '0');
-    }
-    return '17';
-  });
-
-  const [cutoffMinute, setCutoffMinute] = useState(() => {
-    if (config?.cutoffDate) {
-      const d = new Date(config.cutoffDate);
-      return String(d.getMinutes()).padStart(2, '0');
-    }
-    return '00';
-  });
+  // 通用 Toast 浮窗
+  const [toast, setToast] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
   if (!isOpen) return null;
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const cleanPwd = password.trim();
-
-    if (cleanPwd === '19881102') {
-      setShowTrollModal(true);
-      setErrorMsg('');
-      return;
-    }
-
-    if (cleanPwd === '17218') {
+    if (password === '17218') {
       setIsAuthenticated(true);
-      setErrorMsg('');
+      setPasswordError('');
+    } else if (password === '19881102') {
+      setEasterEggDialog(true);
+      setPassword('');
     } else {
-      setErrorMsg('密碼錯誤！請重新輸入');
+      setPasswordError('密碼錯誤！請重新輸入喔！');
     }
   };
 
-  const handleSaveCutoff = () => {
-    if (!cutoffDate) return;
-    const isoString = new Date(`${cutoffDate}T${cutoffHour}:${cutoffMinute}:00`).toISOString();
-    const ok = onSetCutoff(isoString, password);
-    if (ok !== false) {
-      setIsCutoffPickerOpen(false);
-      setModalDialog({
+  const handleSetCutoffShortcut = (shortcutType) => {
+    let dateStr = '';
+    if (shortcutType === '5_1700') {
+      dateStr = '2026-09-05T17:00:00+08:00';
+    } else if (shortcutType === '5_1730') {
+      dateStr = '2026-09-05T17:30:00+08:00';
+    }
+
+    if (dateStr) {
+      onSetCutoff(dateStr, password);
+      setIsPickerOpen(false);
+      setToast({
         isOpen: true,
-        type: 'success',
         title: '時間已更新',
-        message: `下注截止時間已成功設定為：\n${cutoffDate} ${cutoffHour}:${cutoffMinute}`,
-        confirmText: '好的',
-        onConfirmAction: null
+        message: `截止時間已成功調整！`,
+        type: 'success'
       });
     }
   };
 
-  const setQuickPreset = (dateStr, hourStr, minStr) => {
-    setCutoffDate(dateStr);
-    setCutoffHour(hourStr);
-    setCutoffMinute(minStr);
-  };
-
-  const handleTriggerSetReveal = (result) => {
-    const title = result === 'prince' ? '王子隊' : '公主隊';
-    setModalDialog({
+  const handleSetCustomCutoff = () => {
+    if (!tempCutoff) return;
+    const formatted = new Date(tempCutoff).toISOString();
+    onSetCutoff(formatted, password);
+    setIsPickerOpen(false);
+    setToast({
       isOpen: true,
-      type: 'confirm',
-      title: '揭曉結果確認',
-      message: `確定要將揭曉結果設定為【${title}】勝出嗎？\n這將停止所有人下注並顯示得獎名單！`,
-      confirmText: '確定揭曉',
-      onConfirmAction: () => onSetReveal(result, password)
+      title: '時間已更新',
+      message: '自訂截止時間已成功更新！',
+      type: 'success'
     });
   };
 
-  const handleTriggerDeleteBet = (b) => {
-    setModalDialog({
+  const handleExportCsv = () => {
+    exportBetsToCsv(bets, (title, message, type) => {
+      setToast({ isOpen: true, title, message, type });
+    });
+  };
+
+  const handleTriggerDeleteBet = (bet) => {
+    setToast({
       isOpen: true,
-      type: 'confirm',
       title: '刪除下注確認',
-      message: `管理者確定要刪除「${b.name}」這筆 $${Number(b.amount).toLocaleString('en-US')} 的下注記錄嗎？`,
-      confirmText: '確定刪除',
-      onConfirmAction: () => onDeleteBet(b.id, password)
+      message: `確定要刪除「${bet.name}」這筆 $${Number(bet.amount).toLocaleString('en-US')} 的下注嗎？`,
+      type: 'confirm',
+      onConfirm: () => {
+        onDeleteBet(bet.id, password);
+      }
     });
   };
 
-  const formatCurrentCutoff = (isoString) => {
-    if (!isoString) return '未設定';
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return isoString;
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  const handleTriggerReveal = (teamResult, teamName) => {
+    setToast({
+      isOpen: true,
+      title: '設定揭曉結果',
+      message: `確定要設定最終勝出者為【${teamName}】嗎？設定後將鎖定投注並展現勝出恭喜畫面！`,
+      type: 'confirm',
+      onConfirm: () => {
+        onSetReveal(teamResult, password);
+      }
+    });
   };
 
-  const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-  const minutesList = ['00', '15', '30', '45'];
+  const handleExecuteResetAll = () => {
+    if (resetConfirmInput.trim() !== '重置') return;
+
+    onResetAll(password);
+    setIsResetModalOpen(false);
+    setResetConfirmInput('');
+    setToast({
+      isOpen: true,
+      title: '全站已重置',
+      message: '全場下注資料與揭曉狀態已成功重置歸零！',
+      type: 'success'
+    });
+  };
+
+  const formatDisplayTime = (isoString) => {
+    if (!isoString) return '未設定';
+    try {
+      const d = new Date(isoString);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    } catch {
+      return isoString;
+    }
+  };
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
-        
-        {/* 🤪 嗆人搞笑彈窗 */}
-        {showTrollModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-bounceIn">
-            <div className="bg-white rounded-3xl max-w-xs w-full p-6 text-center shadow-2xl border-4 border-rose-400 relative">
-              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
-                🤪
-              </div>
-              
-              <h3 className="text-xl font-black text-rose-600 mb-2 flex items-center justify-center gap-1">
-                <Laugh className="w-6 h-6 animate-spin" />
-                <span>哈哈被抓包了吧！</span>
-              </h3>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+        <div className="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border-2 border-white relative max-h-[90vh] flex flex-col overflow-hidden">
+          
+          {/* 關閉按鈕 */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
-              <p className="text-sm font-bold text-slate-700 leading-relaxed mb-5">
-                密碼提示寫什麼你就真的照填什麼喔？真的太天真囉～傻瓜！😜😜
-              </p>
-
-              <button
-                onClick={() => {
-                  setShowTrollModal(false);
-                  setPassword('');
-                }}
-                className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-black text-sm rounded-2xl shadow-lg transition-all active:scale-95"
-              >
-                我知道錯了，重新輸入 🙈
-              </button>
+          {/* 標題 */}
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+            <div className="p-2 bg-slate-800 text-amber-400 rounded-2xl shadow-md">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-800">管理者控制中心 🔐</h2>
+              <p className="text-xs text-slate-500">性別趴主辦人專用控制台</p>
             </div>
           </div>
-        )}
 
-        {/* 🕒 下注截止時間調整浮窗 */}
-        {isCutoffPickerOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
-            <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-blue-100 relative">
-              <button
-                onClick={() => setIsCutoffPickerOpen(false)}
-                className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <h3 className="font-black text-slate-800 text-sm mb-1 flex items-center gap-1.5 text-blue-900">
-                <Clock className="w-4 h-4 text-blue-600" />
-                調整下注截止時間
-              </h3>
-              <p className="text-[10px] text-slate-500 mb-3">設定後前台將依此時間自動倒數與截止</p>
-
-              {/* 快捷按鈕 */}
-              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-0.5">
-                  <Zap className="w-3 h-3 text-amber-500" /> 快捷:
-                </span>
-                <button
-                  onClick={() => setQuickPreset('2026-09-05', '17', '00')}
-                  className="px-2 py-1 bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-bold rounded-lg hover:bg-blue-100 transition-all"
-                >
-                  9/5 17:00
-                </button>
-                <button
-                  onClick={() => setQuickPreset('2026-09-05', '17', '30')}
-                  className="px-2 py-1 bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-bold rounded-lg hover:bg-blue-100 transition-all"
-                >
-                  9/5 17:30
-                </button>
-              </div>
-
-              {/* 選單 */}
-              <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 mb-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                    日期 (YYYY-MM-DD)
-                  </label>
+          {!isAuthenticated ? (
+            /* 登入表單 */
+            <form onSubmit={handleLogin} className="space-y-4 py-4">
+              <div>
+                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  請輸入管理者密碼
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    type="date"
-                    value={cutoffDate}
-                    onChange={(e) => setCutoffDate(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-xs font-black text-slate-800 outline-none bg-white"
+                    type="password"
+                    required
+                    placeholder="提示：19881102"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 rounded-2xl border border-slate-200 focus:border-slate-800 focus:ring-2 focus:ring-slate-100 outline-none text-slate-800 font-black text-sm transition-all"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                      小時 (24H)
-                    </label>
-                    <select
-                      value={cutoffHour}
-                      onChange={(e) => setCutoffHour(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-black text-slate-800 bg-white outline-none"
-                    >
-                      {hoursList.map(h => (
-                        <option key={h} value={h}>{h} 時</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1">
-                      分鐘
-                    </label>
-                    <select
-                      value={cutoffMinute}
-                      onChange={(e) => setCutoffMinute(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-black text-slate-800 bg-white outline-none"
-                    >
-                      {minutesList.map(m => (
-                        <option key={m} value={m}>{m} 分</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                {passwordError && (
+                  <p className="text-xs text-rose-500 font-bold mt-1.5 pl-1">{passwordError}</p>
+                )}
               </div>
-
-              {/* 動作按鈕 */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setIsCutoffPickerOpen(false)}
-                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSaveCutoff}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow transition-all flex items-center justify-center gap-1 active:scale-95"
-                >
-                  <CalendarCheck className="w-3.5 h-3.5" />
-                  <span>確認更新</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 主管理者視窗 */}
-        <div className="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-100 relative max-h-[90vh] flex flex-col">
-          
-          {/* 頂部 Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-slate-800 text-amber-400 rounded-xl">
-                <Shield className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-extrabold text-slate-800">管理者後台控制中心</h2>
-                <p className="text-[10px] text-slate-500">權限驗證</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsAuthenticated(false);
-                setPassword('');
-                setErrorMsg('');
-                onClose();
-              }}
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* 密碼驗證畫面 */}
-          {!isAuthenticated ? (
-            <form onSubmit={handleLogin} className="py-6 text-center space-y-3 max-w-xs mx-auto">
-              <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-1 shadow-inner">
-                <Key className="w-7 h-7" />
-              </div>
-
-              <h3 className="text-base font-black text-slate-800">請輸入管理者密碼</h3>
-              <p className="text-xs text-slate-400 font-bold">提示：19881102</p>
-
-              {errorMsg && (
-                <div className="p-2 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <input
-                type="password"
-                placeholder="請輸入密碼"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full text-center px-4 py-2.5 rounded-2xl border border-slate-200 focus:border-slate-800 focus:ring-2 focus:ring-slate-100 text-base font-black tracking-widest outline-none"
-                autoFocus
-              />
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs rounded-2xl transition-all shadow active:scale-95"
+                className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-black text-sm rounded-2xl shadow-lg transition-all active:scale-98"
               >
-                進入管理後台
+                解鎖控制台 🔓
               </button>
             </form>
           ) : (
-            /* 管理者操作面板 */
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3.5">
+            /* 已登入控制面板 */
+            <div className="flex-1 overflow-y-auto pr-1 space-y-4">
               
-              {/* 匯出 CSV */}
-              <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-between gap-2">
-                <div>
-                  <h4 className="font-extrabold text-slate-800 text-xs">匯出名單 CSV 檔</h4>
-                  <p className="text-[10px] text-slate-500">姓名、金額、付款與留言</p>
-                </div>
-
-                <button
-                  onClick={() => exportBetsToCsv(bets, '小元寶性別趴下注名單.csv', (msg) => {
-                    setModalDialog({
-                      isOpen: true,
-                      type: 'warning',
-                      title: '無法匯出',
-                      message: msg,
-                      confirmText: '我知道了',
-                      onConfirmAction: null
-                    });
-                  })}
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs rounded-xl shadow transition-all flex items-center gap-1 active:scale-95"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>匯出 CSV</span>
-                </button>
-              </div>
-
-              {/* 🕒 下注截止時間簡潔展示卡片 */}
-              <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-100 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="p-2 bg-white text-blue-600 rounded-xl shadow-2xs flex-shrink-0">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] text-slate-400 font-bold">下注截止時間</div>
-                    <div className="text-xs font-black text-slate-800 truncate">
-                      {formatCurrentCutoff(config?.cutoffDate)}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setIsCutoffPickerOpen(true)}
-                  className="px-3 py-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 font-extrabold text-xs rounded-xl transition-all shadow-2xs flex items-center gap-1 flex-shrink-0 active:scale-95"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>調整時間</span>
-                </button>
-              </div>
-
-              {/* 設定揭曉結果 (簡潔極簡: [👦 王子隊] vs [👧 公主隊]) */}
+              {/* 1. 下注截止時間 (預設折疊卡片) */}
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <h4 className="font-extrabold text-slate-800 text-xs mb-2 flex items-center gap-1">
-                  <Award className="w-3.5 h-3.5 text-pink-600" />
-                  設定性別揭曉結果
-                </h4>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <Calendar className="w-4 h-4 text-indigo-500" />
+                    <span>截止時間:</span>
+                    <span className="font-black text-slate-900">{formatDisplayTime(config.cutoffDate)}</span>
+                  </div>
+                  <button
+                    onClick={() => setIsPickerOpen(true)}
+                    className="px-2.5 py-1 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black rounded-xl transition-all shadow-xs"
+                  >
+                    調整時間
+                  </button>
+                </div>
+              </div>
 
+              {/* 2. 揭曉結果設定 */}
+              <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-200/80">
+                <label className="block text-xs font-black text-amber-900 uppercase tracking-wider mb-2">
+                  🎉 性別揭曉結果 (目前: {config.revealedResult === 'prince' ? '👦 王子隊' : config.revealedResult === 'princess' ? '👧 公主隊' : '未揭曉'})
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => handleTriggerSetReveal('prince')}
-                    className={`py-2 px-3 rounded-2xl font-black text-xs border transition-all flex items-center justify-center gap-1.5 ${
+                    onClick={() => handleTriggerReveal('prince', '👦 王子隊')}
+                    className={`py-2 px-3 rounded-xl font-black text-xs transition-all border ${
                       config.revealedResult === 'prince'
-                        ? 'bg-sky-600 text-white border-sky-700 shadow-md scale-[1.02]'
-                        : 'bg-white text-sky-700 border-slate-200 hover:bg-sky-50'
+                        ? 'bg-sky-500 text-white border-sky-600 shadow'
+                        : 'bg-white text-sky-700 border-sky-200 hover:bg-sky-50'
                     }`}
                   >
-                    <span>👦</span>
-                    <span>王子隊</span>
+                    👦 王子隊
                   </button>
 
                   <button
-                    onClick={() => handleTriggerSetReveal('princess')}
-                    className={`py-2 px-3 rounded-2xl font-black text-xs border transition-all flex items-center justify-center gap-1.5 ${
+                    onClick={() => handleTriggerReveal('princess', '👧 公主隊')}
+                    className={`py-2 px-3 rounded-xl font-black text-xs transition-all border ${
                       config.revealedResult === 'princess'
-                        ? 'bg-pink-600 text-white border-pink-700 shadow-md scale-[1.02]'
-                        : 'bg-white text-pink-700 border-slate-200 hover:bg-pink-50'
+                        ? 'bg-pink-500 text-white border-pink-600 shadow'
+                        : 'bg-white text-pink-700 border-pink-200 hover:bg-pink-50'
                     }`}
                   >
-                    <span>👧</span>
-                    <span>公主隊</span>
+                    👧 公主隊
                   </button>
                 </div>
               </div>
 
-              {/* 下注管理 */}
+              {/* 3. 匯出 Excel 報表 */}
               <div>
-                <h4 className="font-extrabold text-slate-800 text-xs mb-2">
-                  下注者點收管理 ({bets.length} 筆)
-                </h4>
+                <button
+                  onClick={handleExportCsv}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>匯出下注報表 (CSV/Excel)</span>
+                </button>
+              </div>
 
-                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                  {bets.map((b) => (
-                    <div
-                      key={b.id}
-                      className="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between gap-2 shadow-sm"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <button
-                          onClick={() => onTogglePayment(b.id, !b.isPaid, password)}
-                          className={`p-1 rounded-lg border transition-all ${
-                            b.isPaid
-                              ? 'bg-emerald-500 text-white border-emerald-600'
-                              : 'bg-slate-100 text-slate-400 border-slate-300'
-                          }`}
-                        >
-                          {b.isPaid ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Square className="w-3.5 h-3.5" />}
-                        </button>
+              {/* 4. 下注清單管理與勾選付款 */}
+              <div>
+                <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                  全場下注勾選付款與管理 ({bets.length}筆)
+                </h3>
 
-                        <div>
-                          <div className="font-bold text-slate-800 text-xs flex items-center gap-1">
-                            <span>{b.name}</span>
-                            <span className={`px-1 rounded text-[9px] ${
-                              b.team === 'prince' ? 'bg-sky-100 text-sky-800' : 'bg-pink-100 text-pink-800'
-                            }`}>
-                              {b.team === 'prince' ? '王子' : '公主'}
-                            </span>
+                {bets.length === 0 ? (
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 font-medium">
+                    目前尚無下注資料
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {bets.map((bet) => (
+                      <div
+                        key={bet.id}
+                        className="p-2.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between gap-2 shadow-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs">{bet.team === 'prince' ? '👦' : '👧'}</span>
+                            <span className="font-bold text-xs text-slate-800 truncate">{bet.name}</span>
+                            <span className="font-black text-xs text-slate-900">${Number(bet.amount).toLocaleString('en-US')}</span>
                           </div>
-                          <div className="text-[10px] text-slate-500">
-                            ${Number(b.amount).toLocaleString('en-US')} ‧ {b.isPaid ? '已付款' : '未付款'}
-                          </div>
+                          {bet.note && <p className="text-[10px] text-slate-400 truncate">「{bet.note}」</p>}
+                        </div>
+
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* 付款切換 */}
+                          <button
+                            onClick={() => onTogglePayment(bet.id, !bet.isPaid, password)}
+                            className={`px-2.5 py-1 rounded-xl text-[10px] font-black transition-all border ${
+                              bet.isPaid
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : 'bg-amber-100 text-amber-800 border-amber-300'
+                            }`}
+                          >
+                            {bet.isPaid ? '已收錢 ✅' : '未收錢 ⏳'}
+                          </button>
+
+                          {/* 刪除下注 */}
+                          <button
+                            onClick={() => handleTriggerDeleteBet(bet)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-all"
+                            title="刪除此下注"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                      <button
-                        onClick={() => handleTriggerDeleteBet(b)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+              {/* 5. 🚨 多重防呆一鍵重置區域 */}
+              <div className="pt-3 border-t border-slate-200">
+                <button
+                  onClick={() => {
+                    setResetConfirmInput('');
+                    setIsResetModalOpen(true);
+                  }}
+                  className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-rose-200 font-black text-xs rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-98 shadow-xs"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-rose-600" />
+                  <span>一鍵重置全站下注與揭曉 (多重防呆)</span>
+                </button>
               </div>
 
             </div>
@@ -475,18 +322,143 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 管理者自訂通用提示與確認 Modal */}
+      {/* 獨立跳出式「調整時間浮窗 (CutoffPickerModal)」 */}
+      {isPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
+            <button
+              onClick={() => setIsPickerOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-base font-extrabold text-slate-800 mb-1 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-indigo-500" />
+              <span>調整下注截止時間</span>
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">設定後時間一到自動停止下注</p>
+
+            {/* 快捷點擊 */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <button
+                onClick={() => handleSetCutoffShortcut('5_1700')}
+                className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-extrabold text-xs rounded-2xl transition-all text-center"
+              >
+                9/5 17:00 截止
+              </button>
+              <button
+                onClick={() => handleSetCutoffShortcut('5_1730')}
+                className="py-2.5 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-extrabold text-xs rounded-2xl transition-all text-center"
+              >
+                9/5 17:30 截止
+              </button>
+            </div>
+
+            {/* 自訂時間 */}
+            <div className="space-y-3 pt-3 border-t border-slate-100">
+              <label className="block text-xs font-black text-slate-700">自訂精確時間:</label>
+              <input
+                type="datetime-local"
+                value={tempCutoff}
+                onChange={(e) => setTempCutoff(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+              />
+              <button
+                onClick={handleSetCustomCutoff}
+                className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-2xl shadow-md transition-all"
+              >
+                確認更新自訂時間
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗 (ResetConfirmModal)」 */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-rose-100 relative box-border">
+            <button
+              onClick={() => setIsResetModalOpen(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-3 text-rose-600">
+              <AlertTriangle className="w-6 h-6 animate-bounce" />
+              <h3 className="text-base font-black text-slate-800">危險！多重防呆重置確認</h3>
+            </div>
+
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 font-bold mb-4 space-y-1">
+              <p>⚠️ 此操作將全數清空全場所有的下注紀錄，並還原揭曉狀態為未揭曉！</p>
+              <p className="text-rose-600 font-black">❌ 此動作無法復原！</p>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <label className="block text-xs font-black text-slate-700">
+                請在下方手動輸入「<span className="text-rose-600 font-black">重置</span>」兩字二度確認：
+              </label>
+              <input
+                type="text"
+                placeholder="請輸入：重置"
+                value={resetConfirmInput}
+                onChange={(e) => setResetConfirmInput(e.target.value)}
+                className="w-full px-3 py-2 border-2 border-slate-200 focus:border-rose-500 rounded-2xl text-xs font-black text-slate-800 outline-none transition-all"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setIsResetModalOpen(false)}
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs rounded-2xl transition-all"
+              >
+                取消保留
+              </button>
+              <button
+                onClick={handleExecuteResetAll}
+                disabled={resetConfirmInput.trim() !== '重置'}
+                className={`py-2.5 font-black text-xs rounded-2xl shadow-md transition-all ${
+                  resetConfirmInput.trim() === '重置'
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer scale-102'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                確認全站重置 🚨
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 彩蛋搞笑彈窗 */}
+      {easterEggDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-pink-200 text-center">
+            <span className="text-4xl mb-2 block">🤪</span>
+            <h3 className="text-base font-black text-slate-800 mb-1">提示被你猜到了！</h3>
+            <p className="text-xs text-slate-600 mb-4">
+              但這個密碼是寫給小朋友看的啦！真正的管理者密碼請洽寶媽取得喔 😜
+            </p>
+            <button
+              onClick={() => setEasterEggDialog(false)}
+              className="px-5 py-2 bg-pink-500 text-white font-black rounded-xl text-xs shadow-md"
+            >
+              我知道了 哈哈
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 通用 Toast 浮窗 */}
       <ToastModal
-        isOpen={modalDialog.isOpen}
-        type={modalDialog.type}
-        title={modalDialog.title}
-        message={modalDialog.message}
-        confirmText={modalDialog.confirmText}
-        onConfirm={() => {
-          if (modalDialog.onConfirmAction) modalDialog.onConfirmAction();
-          setModalDialog(prev => ({ ...prev, isOpen: false }));
-        }}
-        onClose={() => setModalDialog(prev => ({ ...prev, isOpen: false }))}
+        isOpen={toast.isOpen}
+        type={toast.type}
+        title={toast.title}
+        message={toast.message}
+        onConfirm={toast.onConfirm}
+        onClose={() => setToast(prev => ({ ...prev, isOpen: false }))}
       />
     </>
   );

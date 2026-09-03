@@ -220,6 +220,25 @@ export function useGenderBetStore() {
     return true;
   };
 
+  const adminResetAll = (password) => {
+    if (password !== '17218') return false;
+
+    if (isConnected && socket) {
+      socket.emit('adminResetAll', { password });
+    } else {
+      const nextData = {
+        ...data,
+        bets: [],
+        config: {
+          ...data.config,
+          revealedResult: null
+        }
+      };
+      updateLocalState(nextData);
+    }
+    return true;
+  };
+
   const bets = data.bets || [];
   const princeBets = bets.filter(b => b.team === 'prince');
   const princessBets = bets.filter(b => b.team === 'princess');
@@ -235,7 +254,7 @@ export function useGenderBetStore() {
 
   let leader = 'equal';
   if (princeTotal > princessTotal) leader = 'prince';
-  else if (princessTotal > princessTotal) leader = 'princess';
+  else if (princessTotal > princeTotal) leader = 'princess';
 
   return {
     bets,
@@ -255,6 +274,7 @@ export function useGenderBetStore() {
     adminTogglePayment,
     adminDeleteBet,
     adminSetCutoff,
-    adminSetReveal
+    adminSetReveal,
+    adminResetAll
   };
 }

@@ -109,6 +109,14 @@ io.on('connection', (socket) => {
     io.emit('stateUpdate', currentState);
   });
 
+  socket.on('adminResetAll', ({ password }) => {
+    if (password !== '17218') return;
+    currentState.bets = [];
+    currentState.config.revealedResult = null;
+    saveState(currentState);
+    io.emit('stateUpdate', currentState);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });

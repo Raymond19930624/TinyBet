@@ -87,8 +87,10 @@ export default function App() {
         config={store.config}
         onTogglePayment={store.adminTogglePayment}
         onDeleteBet={store.adminDeleteBet}
+
         onSetCutoff={store.adminSetCutoff}
         onSetReveal={store.adminSetReveal}
+        onResetAll={store.adminResetAll}
       />
 
       {/* 揭曉結果彈窗 (若管理者已設揭曉結果且未手動關閉) */}
