@@ -61,30 +61,6 @@ export default function AdminModal({
 
   const activeAuthPassword = adminAuthPassword || '17218';
 
-  const handleSetShortcut = (shortcutType) => {
-    let dateStr = '';
-    if (shortcutType === '5_1700') {
-      dateStr = '2026-09-05T17:00:00+08:00';
-    } else if (shortcutType === '5_1730') {
-      dateStr = '2026-09-05T17:30:00+08:00';
-    } else if (shortcutType === '5_1800') {
-      dateStr = '2026-09-05T18:00:00+08:00';
-    } else if (shortcutType === '5_1900') {
-      dateStr = '2026-09-05T19:00:00+08:00';
-    }
-
-    if (dateStr) {
-      if (pickerMode === 'cutoff') {
-        onSetCutoff(dateStr, activeAuthPassword);
-        setToast({ isOpen: true, title: '時間已更新', message: '下注截止時間已成功調整！', type: 'success' });
-      } else if (pickerMode === 'reveal') {
-        onSetRevealDate(dateStr, activeAuthPassword);
-        setToast({ isOpen: true, title: '時間已更新', message: '性別揭曉時間已成功調整！', type: 'success' });
-      }
-      setPickerMode(null);
-    }
-  };
-
   // 24 小時制自訂時間套用
   const handleSet24hCustomDate = () => {
     if (!customDateVal) return;
@@ -420,7 +396,7 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 🕒 獨立跳出式「24 小時制時間選擇器浮窗」 */}
+      {/* 🕒 獨立跳出式「24 小時制時間選擇器浮窗」 (純淨無快捷列) */}
       {pickerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
@@ -439,25 +415,9 @@ export default function AdminModal({
               {pickerMode === 'cutoff' ? '設定後時間一到自動停止下注' : '設定性別趴現場的公佈揭曉時間'}
             </p>
 
-            {/* 快捷點擊 (24h 格式) */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <button
-                onClick={() => handleSetShortcut('5_1700')}
-                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-extrabold text-xs rounded-2xl transition-all text-center"
-              >
-                2026/09/05 17:00 (24h)
-              </button>
-              <button
-                onClick={() => handleSetShortcut('5_1730')}
-                className="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-extrabold text-xs rounded-2xl transition-all text-center"
-              >
-                2026/09/05 17:30 (24h)
-              </button>
-            </div>
-
             {/* 24 小時制自訂時間選擇面板 */}
-            <div className="space-y-3 pt-3 border-t border-slate-100">
-              <label className="block text-xs font-black text-slate-700">自訂精確時間 (24 小時制):</label>
+            <div className="space-y-3 pt-1 border-t border-slate-100">
+              <label className="block text-xs font-black text-slate-700">請選擇日期與 24 小時制時間:</label>
               
               {/* 日期選擇 */}
               <div>
@@ -503,7 +463,7 @@ export default function AdminModal({
                 onClick={handleSet24hCustomDate}
                 className="w-full py-2.5 mt-2 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-2xl shadow-md transition-all active:scale-95"
               >
-                套用 24h 自訂時間 🕒
+                確認設定時間 (24h) 🕒
               </button>
             </div>
           </div>
