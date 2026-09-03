@@ -29,10 +29,14 @@ export default function App() {
           onOpenAdmin={() => setIsAdminModalOpen(true)}
         />
 
-        {/* 2. 雙重倒數計時卡片 (傳入 cutoffDate 與 revealDate) */}
+        {/* 2. 雙重倒數卡片 / 揭曉結果重播卡片 */}
         <Countdown
           cutoffDate={store.config.cutoffDate}
           revealDate={store.config.revealDate}
+          revealedResult={store.config.revealedResult}
+          bets={store.bets}
+          grandTotal={store.grandTotal}
+          onReopenRevealModal={() => setIsRevealModalClosed(false)}
         />
 
         {/* 3. 對決金額與比例對決條 */}
