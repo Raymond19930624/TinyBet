@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: TinyDays
+    env: node
+    buildCommand: pnpm install && npx vite build
+    startCommand: node server/index.js
+    plan: free
