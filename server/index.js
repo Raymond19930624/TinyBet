@@ -21,56 +21,8 @@ const io = new Server(httpServer, {
 const DATA_FILE = path.join(__dirname, 'data.json');
 const CLOUD_STORAGE_URL = 'https://api.restful-api.dev/objects/ff808181a0662e5201a0663b9da7000c';
 
-const masterBets = [
-  {
-    id: 'bet_1788428604000_ssam1',
-    name: '素韶阿嬤',
-    team: 'princess',
-    amount: 500,
-    note: '男生女生一樣好，阿嬤2邊都下注',
-    isPaid: true,
-    createdAt: '2026-09-03T09:43:24.000Z'
-  },
-  {
-    id: 'bet_1788427853888_l0jzt',
-    name: '王奕惟元寶爸',
-    team: 'prince',
-    amount: 500,
-    note: '最好大家都選女的，我一人獨得😆😆😆',
-    isPaid: true,
-    createdAt: '2026-09-03T09:30:53.888Z'
-  },
-  {
-    id: 'bet_1788426928000_jhy02',
-    name: '佳慧姨',
-    team: 'princess',
-    amount: 600,
-    note: '小元寶，乖乖健康長大！王子公主阿姨都愛❤️',
-    isPaid: true,
-    createdAt: '2026-09-03T09:15:28.000Z'
-  },
-  {
-    id: 'bet_1788426779000_ypm01',
-    name: '林以平元寶媽',
-    team: 'princess',
-    amount: 500,
-    note: '元寶乖乖～希望你健康長大我們一起欺負爸爸',
-    isPaid: true,
-    createdAt: '2026-09-03T09:12:59.000Z'
-  },
-  {
-    id: 'bet_1788425403650_9tlm7',
-    name: '林佳瑩',
-    team: 'princess',
-    amount: 600,
-    note: '無條件支持公主🤩',
-    isPaid: true,
-    createdAt: '2026-09-03T08:50:03.650Z'
-  }
-];
-
 const defaultState = {
-  bets: masterBets,
+  bets: [],
   config: {
     cutoffDate: '2026-09-05T17:00:00+08:00',
     revealDate: '2026-09-05T17:30:00+08:00',
@@ -105,30 +57,7 @@ function deduplicateBets(betsArray) {
   return result;
 }
 
-function loadStateFromDisk() {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      const state = JSON.parse(raw);
-      if (state && Array.isArray(state.bets) && state.bets.length > 0) {
-        state.bets = deduplicateBets(state.bets);
-        return state;
-      }
-    }
-  } catch (err) {
-    console.error('Error reading data.json:', err);
-  }
-  return defaultState;
-}
-
-function saveStateToDisk(state) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error saving data.json:', err);
-  }
-}
-
+// 雲端數據庫讀取 (唯一最高權威)
 async function fetchStateFromCloud() {
   try {
     const response = await fetch(CLOUD_STORAGE_URL);
@@ -147,6 +76,7 @@ async function fetchStateFromCloud() {
   return null;
 }
 
+// 雲端快照同步
 async function syncStateToCloud(state) {
   try {
     await fetch(CLOUD_STORAGE_URL, {
@@ -157,13 +87,21 @@ async function syncStateToCloud(state) {
         data: state
       })
     });
-    console.log('State & Master Config successfully synced to cloud storage!');
+    console.log('State successfully synced to cloud snapshot!');
   } catch (err) {
     console.error('Failed to sync state to cloud snapshot:', err);
   }
 }
 
-let currentState = loadStateFromDisk();
+function saveStateToDisk(state) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error saving data.json:', err);
+  }
+}
+
+let currentState = defaultState;
 
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
@@ -180,30 +118,21 @@ const persistAndBroadcast = (state) => {
   io.emit('stateUpdate', state);
 };
 
+// 🌟 伺服器開機：100% 雲端數據庫為唯一最高權威，完全排除 Git 本地任何檔案影響
 async function startServer() {
-  // 開機優先載入硬碟
-  saveStateToDisk(currentState);
-
-  // 從雲端抓取最高權威的「管理者自訂時間 config」與「歷史下注」
   const cloudData = await fetchStateFromCloud();
-  if (cloudData) {
-    const cloudBets = Array.isArray(cloudData.bets) && cloudData.bets.length > 0 
-      ? deduplicateBets([...cloudData.bets, ...currentState.bets])
-      : currentState.bets;
-
-    // 🌟 時間設定：優先採用雲端上記錄的管理者自訂時間！
-    const masterConfig = {
-      ...currentState.config,
-      ...(cloudData.config || {})
-    };
-
+  if (cloudData && Array.isArray(cloudData.bets)) {
     currentState = {
-      bets: cloudBets,
-      config: masterConfig
+      bets: deduplicateBets(cloudData.bets),
+      config: {
+        ...defaultState.config,
+        ...(cloudData.config || {})
+      }
     };
     saveStateToDisk(currentState);
-    console.log(`Server initialized! Time config locked from cloud: Cutoff=${currentState.config.cutoffDate}, Reveal=${currentState.config.revealDate}`);
+    console.log(`Server initialized with ${currentState.bets.length} master cloud bets!`);
   } else {
+    currentState = defaultState;
     syncStateToCloud(currentState);
   }
 
@@ -247,14 +176,12 @@ async function startServer() {
     socket.on('adminSetCutoff', ({ cutoffDate, password }) => {
       if (password !== '17218') return;
       currentState.config.cutoffDate = cutoffDate;
-      console.log('Cutoff date updated by admin:', cutoffDate);
       persistAndBroadcast(currentState);
     });
 
     socket.on('adminSetRevealDate', ({ revealDate, password }) => {
       if (password !== '17218') return;
       currentState.config.revealDate = revealDate;
-      console.log('Reveal date updated by admin:', revealDate);
       persistAndBroadcast(currentState);
     });
 
