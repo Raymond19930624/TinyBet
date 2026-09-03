@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: yuanbao-gender-reveal
+    name: TinyBet
     env: node
     buildCommand: pnpm install && npx vite build
     startCommand: node server/index.js
