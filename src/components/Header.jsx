@@ -45,10 +45,10 @@ export default function Header({ isConnected, onOpenAdmin }) {
           到底是男寶還是女寶？猜對贏彩金 🎉
         </p>
 
-        {/* 付款提醒 (修正括號位置為: 下注後請洽【寶媽】付款與確認！) */}
+        {/* 付款提醒 (替換為: 下注後請洽【元寶媽】付款與確認！) */}
         <div className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold shadow-sm box-border">
           <span className="text-base">👩🏻‍🍼</span>
-          <span>下注後請洽【寶媽】付款與確認！</span>
+          <span>下注後請洽【元寶媽】付款與確認！</span>
         </div>
       </div>
     </header>

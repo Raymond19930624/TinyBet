@@ -481,7 +481,7 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 超嗆超幽默彩蛋彈窗 */}
+      {/* 超嗆超幽默彩蛋彈窗 (修正: 跪求元寶媽真實密碼) */}
       {easterEggDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-rose-300 text-center">
@@ -489,7 +489,7 @@ export default function AdminModal({
             <h3 className="text-base font-black text-slate-900 mb-1">哈哈哈抓到了！你還真信提示啊？</h3>
             <p className="text-xs text-slate-600 mb-4 leading-relaxed font-semibold">
               這個密碼是專門釣你們這種想亂搞的小聰明的 😜！<br/>
-              想要後台控制權？乖乖去找寶媽跪求真實密碼啦！
+              想要後台控制權？乖乖去找元寶媽跪求真實密碼啦！
             </p>
             <button
               onClick={() => setEasterEggDialog(false)}

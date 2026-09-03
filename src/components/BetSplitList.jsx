@@ -143,20 +143,30 @@ export default function BetSplitList({
       <div className="w-full box-border">
         <div className="w-full bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white box-border">
           
-          {/* 區塊標題 */}
-          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-base font-black text-slate-800">
+          {/* 區塊標題 (標題右側精準顯示揭曉與對決狀態標籤) */}
+          <div className="mb-3 pb-2 border-b border-slate-100 flex items-center justify-between gap-2">
+            <h2 className="text-base font-black text-slate-800 flex-shrink-0">
               全場即時對決動態牆
             </h2>
-            {revealedResult && (
-              <span className="px-2.5 py-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] font-black rounded-full shadow-xs flex items-center gap-1">
-                <Crown className="w-3 h-3 text-yellow-100 fill-yellow-100" />
-                揭曉公告
-              </span>
+
+            {revealedResult ? (
+              <div className={`px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm border border-white animate-bounce ${
+                revealedResult === 'prince'
+                  ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-amber-500 text-white'
+                  : 'bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white'
+              }`}>
+                <Crown className="w-3.5 h-3.5 text-yellow-200 fill-yellow-200" />
+                <span>揭曉：{revealedResult === 'prince' ? '👦 王子隊勝出' : '👧 公主隊勝出'}！</span>
+              </div>
+            ) : (
+              <div className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-[11px] font-bold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>熱烈對決中</span>
+              </div>
             )}
           </div>
 
-          {/* 雙 Tab 切換按鈕 (揭曉勝出者特別亮記) */}
+          {/* 雙 Tab 切換按鈕 */}
           <div className="grid grid-cols-2 gap-2 mb-3 w-full">
             <button
               onClick={() => setActiveTab('prince')}
