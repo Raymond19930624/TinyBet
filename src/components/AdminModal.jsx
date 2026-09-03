@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles } from 'lucide-react';
+import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles, Copy } from 'lucide-react';
 import { exportBetsToCsv } from '../lib/exportCsv';
 import ToastModal from './ToastModal';
 
@@ -122,6 +122,17 @@ export default function AdminModal({
       message: '全場下注資料與揭曉狀態已成功重置歸零！',
       type: 'success'
     });
+  };
+
+  const handleCopyAndFillResetText = () => {
+    setResetConfirmInput('重置');
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText('重置');
+      }
+    } catch {
+      // safe fallback
+    }
   };
 
   const formatDisplayTime = (isoString) => {
@@ -400,7 +411,7 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗」 */}
+      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗 (支援點擊『重置』自動複製並帶入)」 */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-rose-100 relative box-border">
@@ -422,12 +433,25 @@ export default function AdminModal({
             </div>
 
             <div className="space-y-3 mb-4">
-              <label className="block text-xs font-black text-slate-700">
-                請在下方手動輸入「<span className="text-rose-600 font-black">重置</span>」兩字二度確認：
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-slate-700">
+                  請輸入或點擊
+                  <button
+                    type="button"
+                    onClick={handleCopyAndFillResetText}
+                    className="inline-flex items-center gap-0.5 mx-1 px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300 font-black rounded-lg transition-all active:scale-95 cursor-pointer text-xs"
+                    title="點擊自動複製並帶入"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>【重置】</span>
+                  </button>
+                  確認：
+                </label>
+              </div>
+
               <input
                 type="text"
-                placeholder="請輸入：重置"
+                placeholder="請輸入或點擊上方『重置』鍵帶入"
                 value={resetConfirmInput}
                 onChange={(e) => setResetConfirmInput(e.target.value)}
                 className="w-full px-3 py-2 border-2 border-slate-200 focus:border-rose-500 rounded-2xl text-xs font-black text-slate-800 outline-none transition-all"
@@ -457,7 +481,7 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 超嗆超幽默彩蛋彈窗 (修飾對白: 這個密碼是專門釣你們這種想亂搞的小聰明的 😜！) */}
+      {/* 超嗆超幽默彩蛋彈窗 */}
       {easterEggDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-rose-300 text-center">
