@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles, Copy, RotateCcw } from 'lucide-react';
+import { ShieldCheck, Download, Trash2, Calendar, Lock, CheckCircle2, X, RefreshCw, AlertTriangle, Sparkles, Copy, RotateCcw, Clock } from 'lucide-react';
 import { exportBetsToCsv } from '../lib/exportCsv';
 import ToastModal from './ToastModal';
 
@@ -26,13 +26,17 @@ export default function AdminModal({
 
   // 時間選擇器浮窗 (模式: 'cutoff' | 'reveal' | null)
   const [pickerMode, setPickerMode] = useState(null);
-  const [tempDate, setTempDate] = useState('');
+  
+  // 24 小時制專屬自訂時間狀態
+  const [customDateVal, setCustomDateVal] = useState('2026-09-05');
+  const [customHourVal, setCustomHourVal] = useState('17');
+  const [customMinuteVal, setCustomMinuteVal] = useState('00');
 
   // 多重防呆重置全站 Modal 狀態
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetConfirmInput, setResetConfirmInput] = useState('');
 
-  // 🌟 專屬防呆重置性別揭曉 Modal 狀態 (保留下注資料)
+  // 專屬防呆重置性別揭曉 Modal 狀態
   const [isResetRevealModalOpen, setIsResetRevealModalOpen] = useState(false);
   const [resetRevealConfirmInput, setResetRevealConfirmInput] = useState('');
 
@@ -63,6 +67,10 @@ export default function AdminModal({
       dateStr = '2026-09-05T17:00:00+08:00';
     } else if (shortcutType === '5_1730') {
       dateStr = '2026-09-05T17:30:00+08:00';
+    } else if (shortcutType === '5_1800') {
+      dateStr = '2026-09-05T18:00:00+08:00';
+    } else if (shortcutType === '5_1900') {
+      dateStr = '2026-09-05T19:00:00+08:00';
     }
 
     if (dateStr) {
@@ -77,16 +85,18 @@ export default function AdminModal({
     }
   };
 
-  const handleSetCustomDate = () => {
-    if (!tempDate) return;
-    const formatted = new Date(tempDate).toISOString();
+  // 24 小時制自訂時間套用
+  const handleSet24hCustomDate = () => {
+    if (!customDateVal) return;
+    const isoString = `${customDateVal}T${customHourVal}:${customMinuteVal}:00+08:00`;
+    const formattedDate = new Date(isoString).toISOString();
 
     if (pickerMode === 'cutoff') {
-      onSetCutoff(formatted, activeAuthPassword);
-      setToast({ isOpen: true, title: '時間已更新', message: '自訂截止時間已成功更新！', type: 'success' });
+      onSetCutoff(formattedDate, activeAuthPassword);
+      setToast({ isOpen: true, title: '時間已更新', message: `下注截止時間已調整為 ${customDateVal} ${customHourVal}:${customMinuteVal} (24h)！`, type: 'success' });
     } else if (pickerMode === 'reveal') {
-      onSetRevealDate(formatted, activeAuthPassword);
-      setToast({ isOpen: true, title: '時間已更新', message: '自訂揭曉時間已成功更新！', type: 'success' });
+      onSetRevealDate(formattedDate, activeAuthPassword);
+      setToast({ isOpen: true, title: '時間已更新', message: `性別揭曉時間已調整為 ${customDateVal} ${customHourVal}:${customMinuteVal} (24h)！`, type: 'success' });
     }
     setPickerMode(null);
   };
@@ -122,7 +132,6 @@ export default function AdminModal({
     });
   };
 
-  // 執行重置性別揭曉 (防呆)
   const handleExecuteResetReveal = () => {
     if (resetRevealConfirmInput.trim() !== '重置揭曉') return;
 
@@ -139,7 +148,6 @@ export default function AdminModal({
     });
   };
 
-  // 執行重置全站下注 (防呆)
   const handleExecuteResetAll = () => {
     if (resetConfirmInput.trim() !== '重置') return;
 
@@ -182,6 +190,10 @@ export default function AdminModal({
       return isoString;
     }
   };
+
+  // 生成 24 小時與 60 分鐘下拉選項
+  const hoursOptions = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutesOptions = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 
   return (
     <>
@@ -408,7 +420,7 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 獨立跳出式「時間選擇器浮窗」 */}
+      {/* 🕒 獨立跳出式「24 小時制時間選擇器浮窗」 */}
       {pickerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
@@ -420,43 +432,78 @@ export default function AdminModal({
             </button>
 
             <h3 className="text-base font-extrabold text-slate-800 mb-1 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-indigo-500" />
-              <span>{pickerMode === 'cutoff' ? '調整下注截止時間' : '調整性別揭曉時間'}</span>
+              <Clock className="w-4 h-4 text-indigo-500" />
+              <span>{pickerMode === 'cutoff' ? '調整下注截止時間 (24h)' : '調整性別揭曉時間 (24h)'}</span>
             </h3>
-            <p className="text-xs text-slate-500 mb-4">
+            <p className="text-xs text-slate-500 mb-3">
               {pickerMode === 'cutoff' ? '設定後時間一到自動停止下注' : '設定性別趴現場的公佈揭曉時間'}
             </p>
 
-            {/* 快捷點擊 */}
+            {/* 快捷點擊 (24h 格式) */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               <button
                 onClick={() => handleSetShortcut('5_1700')}
-                className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-extrabold text-xs rounded-2xl transition-all text-center"
+                className="py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-extrabold text-xs rounded-2xl transition-all text-center"
               >
-                2026/09/05 17:00
+                2026/09/05 17:00 (24h)
               </button>
               <button
                 onClick={() => handleSetShortcut('5_1730')}
-                className="py-2.5 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-extrabold text-xs rounded-2xl transition-all text-center"
+                className="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-extrabold text-xs rounded-2xl transition-all text-center"
               >
-                2026/09/05 17:30
+                2026/09/05 17:30 (24h)
               </button>
             </div>
 
-            {/* 自訂時間 */}
+            {/* 24 小時制自訂時間選擇面板 */}
             <div className="space-y-3 pt-3 border-t border-slate-100">
-              <label className="block text-xs font-black text-slate-700">自訂精確時間:</label>
-              <input
-                type="datetime-local"
-                value={tempDate}
-                onChange={(e) => setTempDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
-              />
+              <label className="block text-xs font-black text-slate-700">自訂精確時間 (24 小時制):</label>
+              
+              {/* 日期選擇 */}
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 mb-1 block">日期 (Date):</span>
+                <input
+                  type="date"
+                  value={customDateVal}
+                  onChange={(e) => setCustomDateVal(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              {/* 小時與分鐘 24h 下拉 */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 mb-1 block">小時 (00 ~ 23 時):</span>
+                  <select
+                    value={customHourVal}
+                    onChange={(e) => setCustomHourVal(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-black text-slate-800 focus:outline-none focus:border-indigo-500 bg-white"
+                  >
+                    {hoursOptions.map(h => (
+                      <option key={h} value={h}>{h} 時</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 mb-1 block">分鐘 (00 ~ 55 分):</span>
+                  <select
+                    value={customMinuteVal}
+                    onChange={(e) => setCustomMinuteVal(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-black text-slate-800 focus:outline-none focus:border-indigo-500 bg-white"
+                  >
+                    {minutesOptions.map(m => (
+                      <option key={m} value={m}>{m} 分</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <button
-                onClick={handleSetCustomDate}
-                className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-2xl shadow-md transition-all"
+                onClick={handleSet24hCustomDate}
+                className="w-full py-2.5 mt-2 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-2xl shadow-md transition-all active:scale-95"
               >
-                確認更新時間
+                套用 24h 自訂時間 🕒
               </button>
             </div>
           </div>
