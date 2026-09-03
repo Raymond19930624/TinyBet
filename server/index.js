@@ -41,38 +41,31 @@ function normalizeBetTeam(bet) {
   return bet;
 }
 
-function loadStateFromDisk() {
+// 雲端唯一權威數據庫 (Cloud Single Source of Truth)
+async function fetchStateFromCloud() {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      const state = JSON.parse(raw);
-      if (state && Array.isArray(state.bets)) {
-        state.bets = state.bets.map(normalizeBetTeam);
+    const response = await fetch(CLOUD_STORAGE_URL);
+    if (response.ok) {
+      const json = await response.json();
+      if (json && json.data && Array.isArray(json.data.bets)) {
+        json.data.bets = json.data.bets.map(normalizeBetTeam);
+        console.log(`Loaded ${json.data.bets.length} bets from cloud authoritative storage!`);
+        return json.data;
       }
-      return state;
     }
   } catch (err) {
-    console.error('Error reading data.json:', err);
+    console.error('Failed to load state from cloud snapshot:', err);
   }
-  return defaultState;
+  return null;
 }
 
-function saveStateToDisk(state) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error saving data.json:', err);
-  }
-}
-
-// 雲端快照保護 (確保舊有筆數多的歷史備份不被空的開機 state 覆蓋)
+// 雲端快照同步 (防誤覆蓋)
 async function syncStateToCloud(state) {
   try {
-    // 先驗證雲端庫，避免空 state 誤覆蓋有資料的雲端庫
     const currentCloud = await fetchStateFromCloud();
     if (currentCloud && Array.isArray(currentCloud.bets) && currentCloud.bets.length > state.bets.length) {
       if (state.bets.length === 0 && currentCloud.bets.length > 0) {
-        console.log('Skipping cloud sync: Cloud has more bets than local empty state!');
+        console.log('Skipping cloud sync: Cloud has more bets than empty state!');
         return;
       }
     }
@@ -91,47 +84,14 @@ async function syncStateToCloud(state) {
   }
 }
 
-async function fetchStateFromCloud() {
-  try {
-    const response = await fetch(CLOUD_STORAGE_URL);
-    if (response.ok) {
-      const json = await response.json();
-      if (json && json.data && Array.isArray(json.data.bets)) {
-        json.data.bets = json.data.bets.map(normalizeBetTeam);
-        return json.data;
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load state from cloud snapshot:', err);
-  }
-  return null;
-}
+// 伺服器核心 State 初始化：100% 雲端優先，完全排除本地空白檔干擾
+let currentState = defaultState;
 
-let currentState = loadStateFromDisk();
-
-// 伺服器開機優先雲端合併，確保下注資料 100% 不消失
+// 徹底清除並忽略本地 data.json 讀取，直接從雲端權威數據庫開機
 fetchStateFromCloud().then((cloudData) => {
-  if (cloudData && Array.isArray(cloudData.bets) && cloudData.bets.length > 0) {
-    // 合併雲端與本地 bets
-    const localIds = new Set((currentState.bets || []).map(b => b.id));
-    const mergedBets = [...currentState.bets];
-
-    for (const cb of cloudData.bets) {
-      if (!localIds.has(cb.id)) {
-        mergedBets.push(cb);
-      }
-    }
-
-    currentState = {
-      bets: mergedBets.map(normalizeBetTeam),
-      config: {
-        ...cloudData.config,
-        ...currentState.config
-      }
-    };
-
-    console.log(`Merged ${currentState.bets.length} bets from cloud storage on startup!`);
-    saveStateToDisk(currentState);
+  if (cloudData && Array.isArray(cloudData.bets)) {
+    currentState = cloudData;
+    console.log(`Cloud Master State Activated with ${currentState.bets.length} bets!`);
     io.emit('stateUpdate', currentState);
   }
 });
@@ -145,7 +105,6 @@ if (fs.existsSync(distPath)) {
 }
 
 const persistAndBroadcast = (state) => {
-  saveStateToDisk(state);
   syncStateToCloud(state);
   io.emit('stateUpdate', state);
 };
