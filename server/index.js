@@ -30,11 +30,26 @@ const defaultState = {
   }
 };
 
+function normalizeBetTeam(bet) {
+  if (!bet) return bet;
+  const t = String(bet.team || '').toLowerCase().trim();
+  if (t.includes('princess') || t.includes('girl') || t.includes('公主')) {
+    bet.team = 'princess';
+  } else {
+    bet.team = 'prince';
+  }
+  return bet;
+}
+
 function loadStateFromDisk() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const state = JSON.parse(raw);
+      if (state && Array.isArray(state.bets)) {
+        state.bets = state.bets.map(normalizeBetTeam);
+      }
+      return state;
     }
   } catch (err) {
     console.error('Error reading data.json:', err);
@@ -50,7 +65,7 @@ function saveStateToDisk(state) {
   }
 }
 
-// 雲端快照全自動同步 (100% 確保每次 GitHub Push / 重新部署不會失憶)
+// 雲端快照全自動同步 (100% 確保全數據持久化)
 async function syncStateToCloud(state) {
   try {
     await fetch(CLOUD_STORAGE_URL, {
@@ -73,6 +88,7 @@ async function fetchStateFromCloud() {
     if (response.ok) {
       const json = await response.json();
       if (json && json.data && Array.isArray(json.data.bets)) {
+        json.data.bets = json.data.bets.map(normalizeBetTeam);
         console.log(`Loaded ${json.data.bets.length} bets from cloud persistence on startup!`);
         return json.data;
       }
@@ -85,10 +101,11 @@ async function fetchStateFromCloud() {
 
 let currentState = loadStateFromDisk();
 
-// 伺服器啟動時，優先從雲端載入最新快照資料
+// 伺服器啟動時，優先從雲端載入最新快照資料並修復 team
 fetchStateFromCloud().then((cloudData) => {
   if (cloudData) {
     currentState = cloudData;
+    currentState.bets = currentState.bets.map(normalizeBetTeam);
     saveStateToDisk(currentState);
     io.emit('stateUpdate', currentState);
   }
@@ -110,10 +127,13 @@ const persistAndBroadcast = (state) => {
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
+  // 連線發送前校正 team
+  currentState.bets = currentState.bets.map(normalizeBetTeam);
   socket.emit('stateUpdate', currentState);
 
   socket.on('addBet', (newBet) => {
-    currentState.bets = [newBet, ...currentState.bets];
+    const cleanBet = normalizeBetTeam(newBet);
+    currentState.bets = [cleanBet, ...currentState.bets];
     persistAndBroadcast(currentState);
   });
 

@@ -14,6 +14,25 @@ const defaultData = {
   }
 };
 
+function normalizeBet(bet) {
+  if (!bet) return bet;
+  const t = String(bet.team || '').toLowerCase().trim();
+  if (t.includes('princess') || t.includes('girl') || t.includes('公主')) {
+    bet.team = 'princess';
+  } else {
+    bet.team = 'prince';
+  }
+  return bet;
+}
+
+function normalizeState(state) {
+  if (!state) return defaultData;
+  if (Array.isArray(state.bets)) {
+    state.bets = state.bets.map(normalizeBet);
+  }
+  return state;
+}
+
 const bc = typeof window !== 'undefined' && 'BroadcastChannel' in window ? new BroadcastChannel('yuanbao_gender_reveal') : null;
 let socket = null;
 
@@ -26,7 +45,7 @@ export function useGenderBetStore() {
         if (parsed.bets && parsed.bets.length > 0 && parsed.bets.some(b => b.id && b.id.startsWith('demo-bet'))) {
           return defaultData;
         }
-        return parsed;
+        return normalizeState(parsed);
       }
       return defaultData;
     } catch {
@@ -54,7 +73,8 @@ export function useGenderBetStore() {
 
   const [isConnected, setIsConnected] = useState(false);
 
-  const updateLocalState = (newState) => {
+  const updateLocalState = (rawState) => {
+    const newState = normalizeState(rawState);
     setData(newState);
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newState));
@@ -96,7 +116,7 @@ export function useGenderBetStore() {
     if (bc) {
       bc.onmessage = (event) => {
         if (event.data) {
-          setData(event.data);
+          setData(normalizeState(event.data));
         }
       };
     }
@@ -118,8 +138,9 @@ export function useGenderBetStore() {
 
     socket.on('stateUpdate', (serverState) => {
       if (serverState) {
-        setData(serverState);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(serverState));
+        const normalized = normalizeState(serverState);
+        setData(normalized);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalized));
       }
     });
 
@@ -131,10 +152,12 @@ export function useGenderBetStore() {
   const placeBet = ({ name, team, amount, note }) => {
     const betId = 'bet_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const cleanName = name.trim();
+    const cleanTeam = String(team).toLowerCase().includes('princess') || String(team).toLowerCase().includes('girl') || String(team).toLowerCase().includes('公主') ? 'princess' : 'prince';
+
     const newBet = {
       id: betId,
       name: cleanName,
-      team,
+      team: cleanTeam,
       amount: Number(amount),
       note: note.trim(),
       isPaid: false,
@@ -251,12 +274,14 @@ export function useGenderBetStore() {
     return true;
   };
 
-  const bets = data.bets || [];
+  const rawBets = data.bets || [];
+  const bets = rawBets.map(normalizeBet);
+
   const princeBets = bets.filter(b => b.team === 'prince');
   const princessBets = bets.filter(b => b.team === 'princess');
 
-  const princeTotal = princeBets.reduce((sum, b) => sum + b.amount, 0);
-  const princessTotal = princessBets.reduce((sum, b) => sum + b.amount, 0);
+  const princeTotal = princeBets.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const princessTotal = princessBets.reduce((sum, b) => sum + Number(b.amount || 0), 0);
   const grandTotal = princeTotal + princessTotal;
 
   const princePercent = grandTotal > 0 ? Math.round((princeTotal / grandTotal) * 100) : 50;
