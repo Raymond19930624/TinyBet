@@ -8,7 +8,7 @@ import AdminModal from './components/AdminModal';
 import RevealModal from './components/RevealModal';
 import ToastModal from './components/ToastModal';
 import { useGenderBetStore } from './lib/store';
-import { Bell } from 'lucide-react';
+import { Bell, Sparkles, PartyPopper } from 'lucide-react';
 
 export default function App() {
   const store = useGenderBetStore();
@@ -17,12 +17,15 @@ export default function App() {
   const [isRevealModalClosed, setIsRevealModalClosed] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState('default');
 
+  // 手機端專屬：頂部強效懸浮廣播 Push Banner
+  const [pushBanner, setPushBanner] = useState({ isOpen: false, title: '', message: '' });
+
   // 下注成功專屬導引 Toast
   const [successToast, setSuccessToast] = useState({ isOpen: false, teamName: '', amount: 0 });
 
   const prevRevealedResultRef = useRef(store.config.revealedResult);
 
-  // 1. 自動註冊 Service Worker
+  // 1. 自動註冊 Service Worker (Android 行動版強效支援)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -43,44 +46,64 @@ export default function App() {
         sendNativeNotification('🔔 推播通知已開啟！', {
           body: '性別大揭曉時，您的手機將第一時間收到即時通知！',
           icon: '/favicon.ico',
-          tag: 'welcome-notification'
+          tag: 'welcome-notification',
+          renotify: true
         });
+        setPushBanner({
+          isOpen: true,
+          title: '🔔 推播通知已開啟！',
+          message: '性別大揭曉時，您的手機將第一時間收到即時推播！'
+        });
+        setTimeout(() => setPushBanner(prev => ({ ...prev, isOpen: false })), 4000);
       }
     }
   };
 
+  // 相容 Android Chrome 手機與桌面端的強效 Native Notification 函式
   const sendNativeNotification = (title, options) => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const enrichedOptions = {
+      renotify: true,
+      requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 300],
+      ...options
+    };
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready
         .then((registration) => {
-          registration.showNotification(title, options);
+          registration.showNotification(title, enrichedOptions);
         })
         .catch(() => {
           try {
-            new Notification(title, options);
+            new Notification(title, enrichedOptions);
           } catch (e) {
             console.error('Notification fallback failed', e);
           }
         });
     } else {
       try {
-        new Notification(title, options);
+        new Notification(title, enrichedOptions);
       } catch (e) {
         console.error('Notification fallback failed', e);
       }
     }
   };
 
-  // 監聽揭曉瞬間全場跳出 Modal ＋ 推播 ＋ 震動
+  // 🌟 監聽揭曉瞬間！手機端 100% 震撼雙重推播：頂部強效 Banner ＋ 系統通知 ＋ 全螢幕煙火 ＋ 震動
   useEffect(() => {
     const prevResult = prevRevealedResultRef.current;
     const currentResult = store.config.revealedResult;
 
     if (!prevResult && currentResult) {
+      const isPrince = currentResult === 'prince';
+      const resultText = isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝';
+
+      // 1. 自動跳出全螢幕爆竹煙火 Modal
       setIsRevealModalClosed(false);
 
+      // 2. 觸發手機派對歡慶雙重震動
       if ('vibrate' in navigator) {
         try {
           navigator.vibrate([200, 100, 200, 100, 300]);
@@ -89,11 +112,20 @@ export default function App() {
         }
       }
 
-      const isPrince = currentResult === 'prince';
+      // 3. 彈出手機前台專屬【頂部強效懸浮廣播 Push Banner】 (手機端 100% 必定亮起)
+      setPushBanner({
+        isOpen: true,
+        title: '🎉 小元寶性別大揭曉！',
+        message: `驚喜揭曉：小元寶是【${resultText}】！恭喜得獎者！`
+      });
+
+      // 4. 發送系統層原生推播
       sendNativeNotification('🎉 小元寶性別大揭曉！', {
-        body: `驚喜揭曉：小元寶是【${isPrince ? '👦 帥氣王子寶貝' : '👧 可愛公主寶貝'}】！恭喜猜中的得獎好朋友！`,
+        body: `驚喜揭曉：小元寶是【${resultText}】！恭喜猜中的得獎好朋友！`,
         icon: '/favicon.ico',
         tag: 'gender-reveal-result',
+        renotify: true,
+        requireInteraction: true,
         vibrate: [200, 100, 200]
       });
     }
@@ -114,8 +146,32 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 pb-6 box-border">
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 font-sans selection:bg-pink-300 pb-6 box-border relative">
       
+      {/* 📱 手機端專屬：頂部強效懸浮廣播 Push Banner (揭曉瞬間 100% 彈出) */}
+      {pushBanner.isOpen && (
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-3.5 bg-gradient-to-r from-purple-700 via-indigo-700 to-pink-700 text-white rounded-3xl shadow-2xl border-2 border-yellow-300 animate-slideDown flex items-start gap-3 box-border">
+          <div className="p-2 bg-yellow-400 text-purple-950 rounded-2xl flex-shrink-0 animate-bounce">
+            <PartyPopper className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-black text-yellow-300 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-yellow-200" />
+              <span>{pushBanner.title}</span>
+            </h4>
+            <p className="text-xs font-bold text-white leading-snug mt-0.5">
+              {pushBanner.message}
+            </p>
+          </div>
+          <button
+            onClick={() => setPushBanner(prev => ({ ...prev, isOpen: false }))}
+            className="text-white/80 hover:text-white p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 手機優先最大寬度卡片容器 */}
       <main className="w-full max-w-md mx-auto px-3 space-y-3.5 box-border">
         
@@ -175,7 +231,7 @@ export default function App() {
           onCancelBet={store.cancelBet}
         />
 
-        {/* 頁尾版權小字 (緊貼動態牆底部，消除下方過大留白) */}
+        {/* 頁尾版權小字 */}
         <footer className="text-center pt-2 pb-1 text-[11px] text-slate-600 font-semibold">
           小元寶性別趴特別企劃 💕 祝大家玩的開心猜得準確！
         </footer>
