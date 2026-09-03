@@ -99,14 +99,16 @@ function deduplicateBets(betsArray) {
   return result;
 }
 
-// 雲端數據庫讀取與去重防護
+// 雲端數據庫讀取與時間組態混合保護
 async function fetchStateFromCloud() {
   try {
     const response = await fetch(CLOUD_STORAGE_URL);
     if (response.ok) {
       const json = await response.json();
-      if (json && json.data && Array.isArray(json.data.bets) && json.data.bets.length > 0) {
-        json.data.bets = deduplicateBets(json.data.bets);
+      if (json && json.data) {
+        if (Array.isArray(json.data.bets)) {
+          json.data.bets = deduplicateBets(json.data.bets);
+        }
         return json.data;
       }
     }
@@ -116,7 +118,7 @@ async function fetchStateFromCloud() {
   return null;
 }
 
-// 雲端快照同步
+// 雲端快照同步 (包含時間組態 100% 寫入)
 async function syncStateToCloud(state) {
   try {
     await fetch(CLOUD_STORAGE_URL, {
@@ -127,7 +129,7 @@ async function syncStateToCloud(state) {
         data: state
       })
     });
-    console.log('State successfully synced to cloud snapshot persistence!');
+    console.log('State & Config successfully synced to cloud snapshot persistence!');
   } catch (err) {
     console.error('Failed to sync state to cloud snapshot:', err);
   }
@@ -152,11 +154,15 @@ const persistAndBroadcast = (state) => {
 // 伺服器啟動邏輯
 async function startServer() {
   const cloudData = await fetchStateFromCloud();
-  if (cloudData && Array.isArray(cloudData.bets) && cloudData.bets.length > 0) {
+  if (cloudData && (Array.isArray(cloudData.bets) || cloudData.config)) {
     currentState = {
-      ...cloudData,
-      bets: deduplicateBets(cloudData.bets)
+      bets: Array.isArray(cloudData.bets) && cloudData.bets.length > 0 ? deduplicateBets(cloudData.bets) : defaultBets,
+      config: {
+        ...defaultState.config,
+        ...(cloudData.config || {})
+      }
     };
+    console.log(`Server initialized with cloud state & config! Cutoff: ${currentState.config.cutoffDate}, Reveal: ${currentState.config.revealDate}`);
   } else {
     currentState = defaultState;
     syncStateToCloud(currentState);
