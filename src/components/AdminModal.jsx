@@ -27,7 +27,7 @@ export default function AdminModal({
   // 時間選擇器浮窗 (模式: 'cutoff' | 'reveal' | null)
   const [pickerMode, setPickerMode] = useState(null);
   
-  // 24 小時制專屬自訂時間狀態
+  // 自訂時間狀態
   const [customDateVal, setCustomDateVal] = useState('2026-09-05');
   const [customHourVal, setCustomHourVal] = useState('17');
   const [customMinuteVal, setCustomMinuteVal] = useState('00');
@@ -61,7 +61,7 @@ export default function AdminModal({
 
   const activeAuthPassword = adminAuthPassword || '17218';
 
-  // 24 小時制自訂時間套用
+  // 自訂時間套用
   const handleSet24hCustomDate = () => {
     if (!customDateVal) return;
     const isoString = `${customDateVal}T${customHourVal}:${customMinuteVal}:00+08:00`;
@@ -69,10 +69,10 @@ export default function AdminModal({
 
     if (pickerMode === 'cutoff') {
       onSetCutoff(formattedDate, activeAuthPassword);
-      setToast({ isOpen: true, title: '時間已更新', message: `下注截止時間已調整為 ${customDateVal} ${customHourVal}:${customMinuteVal} (24h)！`, type: 'success' });
+      setToast({ isOpen: true, title: '時間已更新', message: `下注截止時間已成功調整！`, type: 'success' });
     } else if (pickerMode === 'reveal') {
       onSetRevealDate(formattedDate, activeAuthPassword);
-      setToast({ isOpen: true, title: '時間已更新', message: `性別揭曉時間已調整為 ${customDateVal} ${customHourVal}:${customMinuteVal} (24h)！`, type: 'success' });
+      setToast({ isOpen: true, title: '時間已更新', message: `性別揭曉時間已成功調整！`, type: 'success' });
     }
     setPickerMode(null);
   };
@@ -396,7 +396,7 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 🕒 獨立跳出式「24 小時制時間選擇器浮窗」 (純淨無快捷列) */}
+      {/* 🕒 獨立跳出式時間選擇器浮窗 */}
       {pickerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
@@ -409,19 +409,19 @@ export default function AdminModal({
 
             <h3 className="text-base font-extrabold text-slate-800 mb-1 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-indigo-500" />
-              <span>{pickerMode === 'cutoff' ? '調整下注截止時間 (24h)' : '調整性別揭曉時間 (24h)'}</span>
+              <span>{pickerMode === 'cutoff' ? '調整下注截止時間' : '調整性別揭曉時間'}</span>
             </h3>
             <p className="text-xs text-slate-500 mb-3">
               {pickerMode === 'cutoff' ? '設定後時間一到自動停止下注' : '設定性別趴現場的公佈揭曉時間'}
             </p>
 
-            {/* 24 小時制自訂時間選擇面板 */}
+            {/* 時間選擇面板 */}
             <div className="space-y-3 pt-1 border-t border-slate-100">
-              <label className="block text-xs font-black text-slate-700">請選擇日期與 24 小時制時間:</label>
+              <label className="block text-xs font-black text-slate-700">請選擇日期與時間:</label>
               
               {/* 日期選擇 */}
               <div>
-                <span className="text-[10px] font-bold text-slate-500 mb-1 block">日期 (Date):</span>
+                <span className="text-[10px] font-bold text-slate-500 mb-1 block">日期:</span>
                 <input
                   type="date"
                   value={customDateVal}
@@ -430,10 +430,10 @@ export default function AdminModal({
                 />
               </div>
 
-              {/* 小時與分鐘 24h 下拉 */}
+              {/* 小時與分鐘下拉 */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 mb-1 block">小時 (00 ~ 23 時):</span>
+                  <span className="text-[10px] font-bold text-slate-500 mb-1 block">小時:</span>
                   <select
                     value={customHourVal}
                     onChange={(e) => setCustomHourVal(e.target.value)}
@@ -446,7 +446,7 @@ export default function AdminModal({
                 </div>
 
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 mb-1 block">分鐘 (00 ~ 55 分):</span>
+                  <span className="text-[10px] font-bold text-slate-500 mb-1 block">分鐘:</span>
                   <select
                     value={customMinuteVal}
                     onChange={(e) => setCustomMinuteVal(e.target.value)}
@@ -463,7 +463,7 @@ export default function AdminModal({
                 onClick={handleSet24hCustomDate}
                 className="w-full py-2.5 mt-2 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs rounded-2xl shadow-md transition-all active:scale-95"
               >
-                確認設定時間 (24h) 🕒
+                確認設定時間 🕒
               </button>
             </div>
           </div>
