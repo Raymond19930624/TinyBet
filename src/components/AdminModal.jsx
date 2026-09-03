@@ -128,7 +128,8 @@ export default function AdminModal({
     if (!isoString) return '未設定';
     try {
       const d = new Date(isoString);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      if (isNaN(d.getTime())) return isoString;
+      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     } catch {
       return isoString;
     }
@@ -192,14 +193,14 @@ export default function AdminModal({
             /* 已登入控制面板 */
             <div className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-4">
               
-              {/* 1. 時間管理區 (下注截止時間 & 性別揭曉時間) */}
+              {/* 1. 時間管理區 (完整年月日顯示) */}
               <div className="space-y-2">
                 {/* 1-1 下注截止時間 */}
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
                       <Calendar className="w-4 h-4 text-indigo-500" />
-                      <span>下注截止時間:</span>
+                      <span>截止時間:</span>
                       <span className="font-black text-slate-900">{formatDisplayTime(config.cutoffDate)}</span>
                     </div>
                     <button
@@ -216,7 +217,7 @@ export default function AdminModal({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900">
                       <Sparkles className="w-4 h-4 text-purple-600" />
-                      <span>性別揭曉時間:</span>
+                      <span>揭曉時間:</span>
                       <span className="font-black text-purple-950">{formatDisplayTime(config.revealDate)}</span>
                     </div>
                     <button
@@ -344,7 +345,7 @@ export default function AdminModal({
         </div>
       </div>
 
-      {/* 獨立跳出式「時間選擇器浮窗 (DatePickerModal)」 */}
+      {/* 獨立跳出式「時間選擇器浮窗 (完整年月日 2026/09/05)」 */}
       {pickerMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-white relative box-border">
@@ -363,19 +364,19 @@ export default function AdminModal({
               {pickerMode === 'cutoff' ? '設定後時間一到自動停止下注' : '設定性別趴現場的公佈揭曉時間'}
             </p>
 
-            {/* 快捷點擊 */}
+            {/* 快捷點擊 (完整顯示 2026/09/05 年月日) */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               <button
                 onClick={() => handleSetShortcut('5_1700')}
                 className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-extrabold text-xs rounded-2xl transition-all text-center"
               >
-                9/5 17:00
+                2026/09/05 17:00
               </button>
               <button
                 onClick={() => handleSetShortcut('5_1730')}
                 className="py-2.5 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-extrabold text-xs rounded-2xl transition-all text-center"
               >
-                9/5 17:30
+                2026/09/05 17:30
               </button>
             </div>
 
@@ -399,7 +400,7 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗 (ResetConfirmModal)」 */}
+      {/* 🚨 獨立跳出式「多重防呆重置確認彈窗」 */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-rose-100 relative box-border">
@@ -456,20 +457,21 @@ export default function AdminModal({
         </div>
       )}
 
-      {/* 彩蛋搞笑彈窗 */}
+      {/* 超嗆超幽默彩蛋彈窗 (升級超嗆對白) */}
       {easterEggDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-pink-200 text-center">
-            <span className="text-4xl mb-2 block">🤪</span>
-            <h3 className="text-base font-black text-slate-800 mb-1">提示被你猜到了！</h3>
-            <p className="text-xs text-slate-600 mb-4">
-              但這個密碼是寫給小朋友看的啦！真正的管理者密碼請洽寶媽取得喔 😜
+          <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border-2 border-rose-300 text-center">
+            <span className="text-5xl mb-2 block animate-bounce">🤡</span>
+            <h3 className="text-base font-black text-slate-900 mb-1">哈哈哈抓到了！你還真信提示啊？</h3>
+            <p className="text-xs text-slate-600 mb-4 leading-relaxed font-semibold">
+              這個密碼是專門釣你們這種不看提示的小聰明的 😜！<br/>
+              想要後台控制權？乖乖去找寶媽跪求真實密碼啦！
             </p>
             <button
               onClick={() => setEasterEggDialog(false)}
-              className="px-5 py-2 bg-pink-500 text-white font-black rounded-xl text-xs shadow-md"
+              className="px-5 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-black rounded-xl text-xs shadow-md active:scale-95 transition-all"
             >
-              我知道了 哈哈
+              可惡 被嗆到了 哈哈 🤪
             </button>
           </div>
         </div>

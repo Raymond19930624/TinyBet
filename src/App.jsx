@@ -29,8 +29,11 @@ export default function App() {
           onOpenAdmin={() => setIsAdminModalOpen(true)}
         />
 
-        {/* 2. 倒數計時卡片 */}
-        <Countdown cutoffDate={store.config.cutoffDate} />
+        {/* 2. 雙重倒數計時卡片 (傳入 cutoffDate 與 revealDate) */}
+        <Countdown
+          cutoffDate={store.config.cutoffDate}
+          revealDate={store.config.revealDate}
+        />
 
         {/* 3. 對決金額與比例對決條 */}
         <RatioBar
