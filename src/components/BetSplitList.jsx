@@ -168,40 +168,40 @@ export default function BetSplitList({
             )}
           </div>
 
-          {/* 雙 Tab 切換按鈕 (移除 scale-[1.01] 避免邊界切角) */}
+          {/* 雙 Tab 切換按鈕 (高亮完全跟隨 activeTab 點選狀態，揭曉勝出黃金標籤保留於右上角) */}
           <div className="grid grid-cols-2 gap-2 mb-3 w-full">
+            {/* 王子隊 Tab */}
             <button
               onClick={() => setActiveTab('prince')}
               className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 relative box-border ${
-                revealedResult === 'prince'
-                  ? 'bg-sky-500 text-white border-amber-400 shadow-md shadow-sky-200'
-                  : activeTab === 'prince'
+                activeTab === 'prince'
                   ? 'bg-sky-500 text-white border-sky-600 shadow-md shadow-sky-200'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50'
               }`}
             >
               {revealedResult === 'prince' && (
-                <span className="absolute -top-2 right-2 px-1.5 py-0.2 bg-amber-400 text-amber-950 text-[9px] font-black rounded-full shadow border border-white">
-                  👑 獲勝
+                <span className="absolute -top-2.5 right-2 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-black rounded-full shadow border border-white flex items-center gap-0.5">
+                  <Crown className="w-3 h-3 text-amber-950 fill-amber-950" />
+                  獲勝
                 </span>
               )}
               <span className="text-lg leading-none mb-0.5">👦</span>
               <span className="font-extrabold text-xs leading-tight">王子隊</span>
             </button>
 
+            {/* 公主隊 Tab */}
             <button
               onClick={() => setActiveTab('princess')}
               className={`w-full py-2.5 px-3 rounded-2xl transition-all flex flex-col items-center justify-center border-2 relative box-border ${
-                revealedResult === 'princess'
-                  ? 'bg-pink-500 text-white border-amber-400 shadow-md shadow-pink-200'
-                  : activeTab === 'princess'
+                activeTab === 'princess'
                   ? 'bg-pink-500 text-white border-pink-600 shadow-md shadow-pink-200'
                   : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-pink-50'
               }`}
             >
               {revealedResult === 'princess' && (
-                <span className="absolute -top-2 right-2 px-1.5 py-0.2 bg-amber-400 text-amber-950 text-[9px] font-black rounded-full shadow border border-white">
-                  👑 獲勝
+                <span className="absolute -top-2.5 right-2 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-black rounded-full shadow border border-white flex items-center gap-0.5">
+                  <Crown className="w-3 h-3 text-amber-950 fill-amber-950" />
+                  獲勝
                 </span>
               )}
               <span className="text-lg leading-none mb-0.5">👧</span>
@@ -209,7 +209,7 @@ export default function BetSplitList({
             </button>
           </div>
 
-          {/* 名單內容卡片 (預留 p-3.5 緩衝留白，100% 不遮蓋外框) */}
+          {/* 名單內容卡片 */}
           <div className="w-full">
             {/* 王子隊名單 */}
             {activeTab === 'prince' && (
