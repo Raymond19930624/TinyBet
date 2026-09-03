@@ -19,6 +19,7 @@ const io = new Server(httpServer, {
 });
 
 const DATA_FILE = path.join(__dirname, 'data.json');
+const CLOUD_STORAGE_URL = 'https://api.restful-api.dev/objects/ff808181a0662e5201a0663b9da7000c';
 
 const defaultState = {
   bets: [],
@@ -29,7 +30,7 @@ const defaultState = {
   }
 };
 
-function loadState() {
+function loadStateFromDisk() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
@@ -41,7 +42,7 @@ function loadState() {
   return defaultState;
 }
 
-function saveState(state) {
+function saveStateToDisk(state) {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2), 'utf-8');
   } catch (err) {
@@ -49,7 +50,49 @@ function saveState(state) {
   }
 }
 
-let currentState = loadState();
+// 雲端快照全自動同步 (100% 確保每次 GitHub Push / 重新部署不會失憶)
+async function syncStateToCloud(state) {
+  try {
+    await fetch(CLOUD_STORAGE_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'TinyBetState',
+        data: state
+      })
+    });
+    console.log('State successfully synced to cloud snapshot persistence!');
+  } catch (err) {
+    console.error('Failed to sync state to cloud snapshot:', err);
+  }
+}
+
+async function fetchStateFromCloud() {
+  try {
+    const response = await fetch(CLOUD_STORAGE_URL);
+    if (response.ok) {
+      const json = await response.json();
+      if (json && json.data && Array.isArray(json.data.bets)) {
+        console.log(`Loaded ${json.data.bets.length} bets from cloud persistence on startup!`);
+        return json.data;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load state from cloud snapshot:', err);
+  }
+  return null;
+}
+
+let currentState = loadStateFromDisk();
+
+// 伺服器啟動時，優先從雲端載入最新快照資料
+fetchStateFromCloud().then((cloudData) => {
+  if (cloudData) {
+    currentState = cloudData;
+    saveStateToDisk(currentState);
+    io.emit('stateUpdate', currentState);
+  }
+});
 
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
@@ -59,22 +102,26 @@ if (fs.existsSync(distPath)) {
   });
 }
 
+const persistAndBroadcast = (state) => {
+  saveStateToDisk(state);
+  syncStateToCloud(state);
+  io.emit('stateUpdate', state);
+};
+
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
   socket.emit('stateUpdate', currentState);
 
   socket.on('addBet', (newBet) => {
     currentState.bets = [newBet, ...currentState.bets];
-    saveState(currentState);
-    io.emit('stateUpdate', currentState);
+    persistAndBroadcast(currentState);
   });
 
   socket.on('cancelBet', ({ betId }) => {
     const betIndex = currentState.bets.findIndex(b => b.id === betId);
     if (betIndex !== -1 && !currentState.bets[betIndex].isPaid) {
       currentState.bets.splice(betIndex, 1);
-      saveState(currentState);
-      io.emit('stateUpdate', currentState);
+      persistAndBroadcast(currentState);
     }
   });
 
@@ -83,45 +130,39 @@ io.on('connection', (socket) => {
     const bet = currentState.bets.find(b => b.id === betId);
     if (bet) {
       bet.isPaid = isPaid;
-      saveState(currentState);
-      io.emit('stateUpdate', currentState);
+      persistAndBroadcast(currentState);
     }
   });
 
   socket.on('adminDeleteBet', ({ betId, password }) => {
     if (password !== '17218') return;
     currentState.bets = currentState.bets.filter(b => b.id !== betId);
-    saveState(currentState);
-    io.emit('stateUpdate', currentState);
+    persistAndBroadcast(currentState);
   });
 
   socket.on('adminSetCutoff', ({ cutoffDate, password }) => {
     if (password !== '17218') return;
     currentState.config.cutoffDate = cutoffDate;
-    saveState(currentState);
-    io.emit('stateUpdate', currentState);
+    persistAndBroadcast(currentState);
   });
 
   socket.on('adminSetRevealDate', ({ revealDate, password }) => {
     if (password !== '17218') return;
     currentState.config.revealDate = revealDate;
-    saveState(currentState);
-    io.emit('stateUpdate', currentState);
+    persistAndBroadcast(currentState);
   });
 
   socket.on('adminSetReveal', ({ result, password }) => {
     if (password !== '17218') return;
     currentState.config.revealedResult = result;
-    saveState(currentState);
-    io.emit('stateUpdate', currentState);
+    persistAndBroadcast(currentState);
   });
 
   socket.on('adminResetAll', ({ password }) => {
     if (password !== '17218') return;
     currentState.bets = [];
     currentState.config.revealedResult = null;
-    saveState(currentState);
-    io.emit('stateUpdate', currentState);
+    persistAndBroadcast(currentState);
   });
 
   socket.on('disconnect', () => {

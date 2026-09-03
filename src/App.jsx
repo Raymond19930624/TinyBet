@@ -8,7 +8,6 @@ import AdminModal from './components/AdminModal';
 import RevealModal from './components/RevealModal';
 import ToastModal from './components/ToastModal';
 import { useGenderBetStore } from './lib/store';
-import { PlusCircle } from 'lucide-react';
 
 export default function App() {
   const store = useGenderBetStore();
@@ -77,14 +76,13 @@ export default function App() {
         />
       </main>
 
-      {/* 浮動下注按鈕 (右下角 Floating Button) */}
+      {/* 浮動下注按鈕 (右下角 Floating Button, 移除 + 加號) */}
       {!isLocked && (
         <div className="fixed bottom-5 right-5 z-40">
           <button
             onClick={() => setIsBetModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-black text-sm rounded-full shadow-2xl shadow-purple-400/60 transform hover:scale-105 active:scale-95 transition-all border-2 border-white/80"
+            className="flex items-center gap-1.5 px-5 py-3.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-black text-sm rounded-full shadow-2xl shadow-purple-400/60 transform hover:scale-105 active:scale-95 transition-all border-2 border-white/80"
           >
-            <PlusCircle className="w-5 h-5 animate-pulse" />
             <span>我要下注 🎲</span>
           </button>
         </div>
@@ -116,7 +114,7 @@ export default function App() {
         onResetAll={store.adminResetAll}
       />
 
-      {/* 揭曉結果彈窗 (若管理者已設揭曉結果且未手動關閉) */}
+      {/* 揭曉結果彈窗 */}
       {store.config.revealedResult && !isRevealModalClosed && (
         <RevealModal
           revealedResult={store.config.revealedResult}
@@ -126,7 +124,7 @@ export default function App() {
         />
       )}
 
-      {/* 🌟 下注成功專屬『請記得洽【元寶媽】確認付款完成喔！』提示 ToastModal */}
+      {/* 下注成功專屬提示 ToastModal */}
       <ToastModal
         isOpen={successToast.isOpen}
         type="success"
