@@ -6,6 +6,7 @@ import BetSplitList from './components/BetSplitList';
 import BetFormModal from './components/BetFormModal';
 import AdminModal from './components/AdminModal';
 import RevealModal from './components/RevealModal';
+import ToastModal from './components/ToastModal';
 import { useGenderBetStore } from './lib/store';
 import { PlusCircle } from 'lucide-react';
 
@@ -15,8 +16,20 @@ export default function App() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isRevealModalClosed, setIsRevealModalClosed] = useState(false);
 
+  // 下注成功專屬導引 Toast
+  const [successToast, setSuccessToast] = useState({ isOpen: false, teamName: '', amount: 0 });
+
   const isCutoffPassed = store.config.cutoffDate ? new Date() > new Date(store.config.cutoffDate) : false;
   const isLocked = isCutoffPassed || Boolean(store.config.revealedResult);
+
+  const handlePlaceBet = (betData) => {
+    store.placeBet(betData);
+    setSuccessToast({
+      isOpen: true,
+      teamName: betData.team === 'prince' ? '👦 王子隊' : '👧 公主隊',
+      amount: betData.amount
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-purple-50 to-pink-100 text-slate-800 pb-24 font-sans selection:bg-pink-300">
@@ -39,7 +52,7 @@ export default function App() {
           onReopenRevealModal={() => setIsRevealModalClosed(false)}
         />
 
-        {/* 3. 對決金額與比例對決條 (傳入 revealedResult) */}
+        {/* 3. 對決金額與比例對決條 */}
         <RatioBar
           princeTotal={store.princeTotal}
           princessTotal={store.princessTotal}
@@ -51,7 +64,7 @@ export default function App() {
           revealedResult={store.config.revealedResult}
         />
 
-        {/* 4. 即時對決名單牆 (傳入 revealedResult) */}
+        {/* 4. 即時對決名單牆 */}
         <BetSplitList
           bets={store.bets}
           myBetIds={store.myBetIds}
@@ -77,11 +90,11 @@ export default function App() {
         </div>
       )}
 
-      {/* 彈窗元件 */}
+      {/* 下注表單彈窗 */}
       <BetFormModal
         isOpen={isBetModalOpen}
         onClose={() => setIsBetModalOpen(false)}
-        onPlaceBet={store.placeBet}
+        onPlaceBet={handlePlaceBet}
         isLocked={isLocked}
         princeTotal={store.princeTotal}
         princessTotal={store.princessTotal}
@@ -89,6 +102,7 @@ export default function App() {
         revealedResult={store.config.revealedResult}
       />
 
+      {/* 管理者控制彈窗 */}
       <AdminModal
         isOpen={isAdminModalOpen}
         onClose={() => setIsAdminModalOpen(false)}
@@ -111,6 +125,16 @@ export default function App() {
           onClose={() => setIsRevealModalClosed(true)}
         />
       )}
+
+      {/* 🌟 下注成功專屬『請洽寶媽付款』提示 ToastModal */}
+      <ToastModal
+        isOpen={successToast.isOpen}
+        type="success"
+        title="🎉 下注成功！"
+        message={`太棒了！您已成功預測【${successToast.teamName}】$${Number(successToast.amount).toLocaleString('en-US')}！\n\n👩🏻‍🍼 請記得【洽寶媽】付款與確認完成喔！`}
+        confirmText="好的，去找寶媽 💖"
+        onClose={() => setSuccessToast(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* 頁尾版權小字 */}
       <footer className="text-center mt-8 text-[11px] text-slate-600 font-semibold">

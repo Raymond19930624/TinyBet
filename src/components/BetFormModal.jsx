@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, HeartHandshake, AlertCircle, CheckCircle2, User, MessageCircleHeart, Plus, Minus, X, Trophy, Sparkles } from 'lucide-react';
+import { Send, HeartHandshake, AlertCircle, User, MessageCircleHeart, Plus, Minus, X, Trophy, Sparkles } from 'lucide-react';
 import ToastModal from './ToastModal';
 
 export default function BetFormModal({
@@ -16,7 +16,6 @@ export default function BetFormModal({
   const [team, setTeam] = useState('prince');
   const [amount, setAmount] = useState(100);
   const [note, setNote] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const [toast, setToast] = useState({ isOpen: false, title: '', message: '', type: 'warning' });
 
@@ -56,7 +55,7 @@ export default function BetFormModal({
       setToast({
         isOpen: true,
         title: '請填寫姓名',
-        message: '請輸入您的姓名或綽號才可以送出下注喔！',
+        message: '請輸入您的姓名或暱稱才可以送出下注喔！',
         type: 'warning'
       });
       return;
@@ -72,6 +71,7 @@ export default function BetFormModal({
       return;
     }
 
+    // 1. 送出下注
     onPlaceBet({
       name,
       team,
@@ -79,12 +79,9 @@ export default function BetFormModal({
       note
     });
 
-    setIsSuccess(true);
+    // 2. 清空欄位並【立刻關閉表單 Modal】不留在原本畫面！
     setNote('');
-    setTimeout(() => {
-      setIsSuccess(false);
-      onClose();
-    }, 1800);
+    onClose();
   };
 
   return (
@@ -128,16 +125,8 @@ export default function BetFormModal({
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-1 space-y-3">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto no-scrollbar pr-1 space-y-3">
               
-              {/* 成功提示 */}
-              {isSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2 text-emerald-800 text-xs font-bold animate-bounce">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                  <span>下注成功！請記得將款項【付給寶媽】確認完成喔！</span>
-                </div>
-              )}
-
               {/* 1. 選擇陣容 */}
               <div>
                 <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
